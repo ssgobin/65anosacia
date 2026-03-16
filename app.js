@@ -177,14 +177,76 @@ function isValidCompanyName(value) {
     return value.trim().length >= 2;
 }
 
+function normalizeText(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase();
+}
+
+function hasSameCompanionDataAsMain() {
+    if (hasCompanion.value !== "sim") {
+        return false;
+    }
+
+    const sameName = normalizeText(companionFullName.value) === normalizeText(fullName.value);
+    const samePhone = onlyDigits(companionPhone.value) === onlyDigits(phone.value);
+    const sameCpf = personType.value === "PF" && onlyDigits(companionCpf.value) === onlyDigits(cpf.value);
+
+    return sameName || samePhone || sameCpf;
+}
+
 function clearInputErrors() {
     const fields = form.querySelectorAll("input, select, button");
     fields.forEach((field) => field.classList.remove("input-error"));
+    fields.forEach((field) => field.removeAttribute("aria-invalid"));
+
+    const messages = form.querySelectorAll(".field-error");
+    messages.forEach((message) => message.remove());
+}
+
+function getFieldErrorContainer(field) {
+    if (field === openTermsButton) {
+        return termsSection;
+    }
+
+    return field.closest(".field-group") || field.closest("fieldset") || field.parentElement;
+}
+
+function setFieldError(field, message) {
+    const container = getFieldErrorContainer(field);
+    if (!container) {
+        return;
+    }
+
+    const key = field.id || field.name || "generic";
+    const errorId = `error-${key}`;
+
+    if (!container.querySelector(`#${errorId}`)) {
+        const error = document.createElement("p");
+        error.id = errorId;
+        error.className = "field-error";
+        error.textContent = message;
+        container.appendChild(error);
+    }
+
+    field.classList.add("input-error");
+    field.setAttribute("aria-invalid", "true");
 }
 
 function setFeedback(message, type) {
     feedback.textContent = message;
     feedback.className = `feedback ${type}`;
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function showElement(element) {
@@ -341,6 +403,27 @@ function validateForm() {
                 message: "CPF do acompanhante inválido.",
             });
         }
+
+        if (normalizeText(companionFullName.value) === normalizeText(fullName.value)) {
+            invalidFields.push({
+                field: companionFullName,
+                message: "Nome do acompanhante não pode ser igual ao nome principal.",
+            });
+        }
+
+        if (onlyDigits(companionPhone.value) === onlyDigits(phone.value)) {
+            invalidFields.push({
+                field: companionPhone,
+                message: "Celular do acompanhante não pode ser igual ao celular principal.",
+            });
+        }
+
+        if (personType.value === "PF" && onlyDigits(companionCpf.value) === onlyDigits(cpf.value)) {
+            invalidFields.push({
+                field: companionCpf,
+                message: "CPF do acompanhante não pode ser igual ao CPF principal.",
+            });
+        }
     }
 
     if (termsAccepted.value !== "true") {
@@ -351,9 +434,12 @@ function validateForm() {
     }
 
     if (invalidFields.length > 0) {
-        invalidFields[0].field.classList.add("input-error");
+        invalidFields.forEach(({ field, message }) => {
+            setFieldError(field, message);
+        });
+
         invalidFields[0].field.focus();
-        setFeedback(invalidFields[0].message, "error");
+        setFeedback("Revise os campos destacados e corrija os dados.", "error");
         return false;
     }
 
@@ -426,9 +512,15 @@ function setupSuccessDialog() {
     });
 }
 
-function openSuccessDialog(guestName) {
+function openSuccessDialog(guestName, hasCompanionSelected) {
     const firstName = guestName.trim().split(/\s+/)[0] || "Convidado";
-    successMessage.textContent = `${firstName}, sua presença está confirmada! Obrigado por fazer parte da celebração dos 65 anos da ACIA. Prepare-se para uma noite especial.`;
+    const highlightedName = `<span class="guest-highlight">${escapeHtml(firstName)}</span>`;
+
+    if (hasCompanionSelected) {
+        successMessage.innerHTML = `${highlightedName}, sua presença e a dos seus convidados foi confirmada. Teremos uma noite muito especial para celebrar a história da ACIA com muita alegria.`;
+    } else {
+        successMessage.innerHTML = `${highlightedName}, sua presença foi confirmada. Teremos uma noite muito especial para celebrar os 65 anos da ACIA com muita emoção.`;
+    }
 
     if (typeof successDialog.showModal === "function") {
         successDialog.showModal();
@@ -454,7 +546,8 @@ function updateProgressiveFlow() {
         (hasCompanion.value === "sim" &&
             isValidFullName(companionFullName.value) &&
             isValidPhone(companionPhone.value) &&
-            isValidCpf(companionCpf.value));
+            isValidCpf(companionCpf.value) &&
+            !hasSameCompanionDataAsMain());
 
     if (fullNameDone) {
         showElement(personTypeGroup);
@@ -574,7 +667,7 @@ async function handleSubmit(event) {
         await addDoc(collection(db, "confirmacoes_jantar"), payload);
 
         setFeedback("Confirmação enviada com sucesso.", "success");
-        openSuccessDialog(fullName.value);
+        openSuccessDialog(fullName.value, hasCompanion.value === "sim");
         form.reset();
         termsAccepted.value = "false";
         termsStatus.textContent = "Termos ainda não aceitos.";

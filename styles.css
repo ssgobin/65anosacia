@@ -90,6 +90,29 @@ body {
     color: var(--muted);
     font-size: 0.95rem;
     font-weight: 300;
+    line-height: 1.45;
+}
+
+.map-link {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 6px 12px;
+    color: #1e3a8a;
+    background: #eff6ff;
+    text-decoration: none;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.map-link:hover {
+    background: #dbeafe;
+}
+
+.map-link.subtle {
+    opacity: 0.88;
 }
 
 .admin-link {
@@ -233,6 +256,14 @@ select:focus {
     color: var(--success);
 }
 
+.field-error {
+    margin: 6px 0 0;
+    color: var(--danger);
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
 .hidden {
     display: none;
 }
@@ -277,68 +308,110 @@ select:focus {
 }
 
 .success-dialog {
-    width: min(92vw, 560px);
+    width: min(92vw, 600px);
+    max-height: 92vh;
     border: none;
-    border-radius: 20px;
+    border-radius: 24px;
     padding: 0;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .success-dialog::backdrop {
-    background: rgba(15, 23, 42, 0.56);
+    background:
+        radial-gradient(circle at 20% 20%, rgba(147, 197, 253, 0.25), transparent 35%),
+        rgba(15, 23, 42, 0.58);
 }
 
 .success-dialog article {
     position: relative;
-    padding: 26px 22px 24px;
+    padding: 26px 28px 24px;
     background:
-        radial-gradient(circle at 8% 12%, rgba(147, 197, 253, 0.42), transparent 28%),
-        radial-gradient(circle at 90% 5%, rgba(191, 219, 254, 0.45), transparent 26%),
-        linear-gradient(180deg, #f8fbff, #eaf2ff);
+        radial-gradient(circle at 8% 10%, rgba(191, 219, 254, 0.5), transparent 28%),
+        radial-gradient(circle at 90% 6%, rgba(147, 197, 253, 0.45), transparent 30%),
+        linear-gradient(180deg, #ffffff, #f3f8ff 78%);
+    border: 1px solid #dbeafe;
     text-align: center;
-    animation: popupEnter 320ms ease-out;
+    animation: popupEnter 280ms ease-out;
+}
+
+.success-logo {
+    display: block;
+    width: min(100%, 210px);
+    height: auto;
+    object-fit: contain;
+    margin: 8px auto 6px;
 }
 
 .success-badge {
     display: inline-flex;
-    padding: 6px 12px;
+    padding: 7px 14px;
     border-radius: 999px;
-    background: #dbeafe;
+    background: #e7efff;
     color: #1e3a8a;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 0.8px;
     font-size: 0.78rem;
 }
 
 .success-dialog h3 {
-    margin: 12px 0 10px;
+    margin: 14px 0 6px;
     font-family: "Montserrat", sans-serif;
     font-weight: 900;
     font-size: clamp(1.4rem, 2.8vw, 1.9rem);
     color: #0f172a;
+    line-height: 1.2;
+}
+
+.success-event-info {
+    margin: 0 auto 12px !important;
+    color: #1e3a8a !important;
+    font-size: 0.92rem;
+    font-weight: 600 !important;
 }
 
 .success-dialog p {
     margin: 0 auto;
-    max-width: 46ch;
+    max-width: 42ch;
     color: #334155;
-    line-height: 1.5;
+    line-height: 1.55;
     font-weight: 300;
+    font-size: 1.02rem;
+}
+
+.guest-highlight {
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #0f172a;
+    letter-spacing: 0.4px;
+}
+
+.success-dialog .dialog-actions {
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 14px;
+}
+
+.success-dialog .dialog-actions .map-link,
+.success-dialog .dialog-actions .primary-button {
+    width: min(100%, 260px);
+    justify-content: center;
 }
 
 .celebration-stars {
     position: relative;
-    height: 42px;
-    margin-top: 12px;
+    height: 26px;
+    margin-top: 14px;
+    opacity: 0.9;
 }
 
 .celebration-stars span {
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: #60a5fa;
-    animation: sparkle 1.6s ease-in-out infinite;
+    animation: sparkle 1.8s ease-in-out infinite;
 }
 
 .celebration-stars span:nth-child(1) {
@@ -407,8 +480,20 @@ select:focus {
         width: min(100%, 220px);
     }
 
+    .success-logo {
+        width: min(100%, 170px);
+    }
+
     .primary-button,
     .secondary-button {
         width: 100%;
+    }
+
+    .success-dialog .dialog-actions {
+        margin-top: 12px;
+    }
+
+    .success-dialog article {
+        padding: 20px 16px 18px;
     }
 }
