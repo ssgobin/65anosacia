@@ -188,6 +188,7 @@ body {
     padding: 14px;
     display: grid;
     gap: 10px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
 }
 
 .guest-main {
@@ -255,6 +256,12 @@ body {
     font-size: 0.9rem;
 }
 
+.guest-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 .checkin-button {
     border: none;
     border-radius: 12px;
@@ -264,6 +271,21 @@ body {
     cursor: pointer;
     transition: transform 120ms ease, filter 120ms ease;
     justify-self: start;
+}
+
+.details-button {
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #eff6ff;
+    cursor: pointer;
+}
+
+.details-button:hover {
+    background: #dbeafe;
 }
 
 .checkin-button.mark {
@@ -358,6 +380,85 @@ body {
     font-weight: 300;
 }
 
+.details-dialog {
+    width: min(94vw, 760px);
+    border: none;
+    border-radius: 18px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.details-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.56);
+}
+
+.details-dialog article {
+    padding: 18px;
+    background: #ffffff;
+}
+
+.details-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.details-head h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.icon-close {
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #1e3a8a;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.details-subtitle {
+    margin: 6px 0 12px;
+    color: #475569;
+    font-weight: 600;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.details-item {
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 10px;
+}
+
+.details-item strong {
+    display: block;
+    font-size: 0.78rem;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.details-item span {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.details-actions {
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
 @keyframes popupEnter {
     from {
         opacity: 0;
@@ -399,6 +500,26 @@ body {
     }
 
     .checkin-button {
+        width: 100%;
+    }
+
+    .details-button {
+        width: 100%;
+    }
+
+    .guest-actions {
+        display: grid;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .details-actions {
+        justify-content: stretch;
+    }
+
+    .details-actions .primary-button {
         width: 100%;
     }
 }

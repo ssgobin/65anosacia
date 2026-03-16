@@ -37,6 +37,11 @@ const checkinDialog = document.getElementById("checkinDialog");
 const checkinDialogConfirm = document.getElementById("checkinDialogConfirm");
 const checkinDialogCancel = document.getElementById("checkinDialogCancel");
 const checkinDialogMessage = document.getElementById("checkinDialogMessage");
+const detailsDialog = document.getElementById("detailsDialog");
+const detailsDialogClose = document.getElementById("detailsDialogClose");
+const detailsDialogOk = document.getElementById("detailsDialogOk");
+const detailsDialogSubtitle = document.getElementById("detailsDialogSubtitle");
+const detailsGrid = document.getElementById("detailsGrid");
 
 let pendingCheckin = null;
 
@@ -145,6 +150,57 @@ function updateStats(guests) {
     pendingCount.textContent = String(guests.length - checkedCount);
 }
 
+function getGuestById(guestId) {
+    return allGuests.find((guest) => guest.id === guestId) || null;
+}
+
+function detailsItem(label, value) {
+    return `
+      <div class="details-item">
+        <strong>${escapeHtml(label)}</strong>
+        <span>${escapeHtml(value || "-")}</span>
+      </div>
+    `;
+}
+
+function openDetailsDialog(guest) {
+    const documentLabel = guest.personType === "PF" ? "CPF" : "CNPJ";
+    const documentValue = guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj);
+    const companyValue = guest.personType === "PJ" ? (guest.companyName || "-") : "Não se aplica";
+    const companionSummary = guest.hasCompanion && guest.companion
+        ? `${guest.companion.fullName || "Acompanhante"} | ${formatPhone(guest.companion.phone)} | CPF ${formatCpf(guest.companion.cpf)}`
+        : "Sem acompanhante";
+
+    detailsDialogSubtitle.textContent = guest.fullName || "Convidado";
+
+    detailsGrid.innerHTML = [
+        detailsItem("Nome completo", guest.fullName || "-"),
+        detailsItem("Tipo", guest.personType || "-"),
+        detailsItem(documentLabel, documentValue),
+        detailsItem("Nome da empresa", companyValue),
+        detailsItem("WhatsApp", formatPhone(guest.phone)),
+        detailsItem("Acompanhante", companionSummary),
+        detailsItem("Termos aceitos em", formatDateTime(guest.acceptedTermsAt)),
+        detailsItem("Confirmado em", formatDateTime(guest.createdAt)),
+        detailsItem("Status de check-in", guest.checkedIn ? "Chegou no evento" : "Aguardando check-in"),
+        detailsItem("Check-in em", formatDateTime(guest.checkedInAt)),
+    ].join("");
+
+    if (typeof detailsDialog.showModal === "function") {
+        detailsDialog.showModal();
+    } else {
+        detailsDialog.setAttribute("open", "true");
+    }
+}
+
+function closeDetailsDialog() {
+    if (typeof detailsDialog.close === "function") {
+        detailsDialog.close();
+    } else {
+        detailsDialog.removeAttribute("open");
+    }
+}
+
 function renderGuests(guests) {
     if (guests.length === 0) {
         guestList.innerHTML = '<div class="empty-state">Nenhum convidado encontrado para este filtro.</div>';
@@ -189,14 +245,26 @@ function renderGuests(guests) {
             <strong>Acompanhante:</strong> ${companionText}
           </div>
 
-          <button
-            class="checkin-button ${guest.checkedIn ? "undo" : "mark"}"
-            data-id="${guest.id}"
-            data-checked="${guest.checkedIn ? "1" : "0"}"
-            type="button"
-          >
-            ${guest.checkedIn ? "Desfazer check-in" : "Confirmar check-in"}
-          </button>
+                    <div class="guest-actions">
+                        <button
+                            class="details-button"
+                            data-action="details"
+                            data-id="${guest.id}"
+                            type="button"
+                        >
+                            Ver detalhes
+                        </button>
+
+                        <button
+                            class="checkin-button ${guest.checkedIn ? "undo" : "mark"}"
+                            data-action="checkin"
+                            data-id="${guest.id}"
+                            data-checked="${guest.checkedIn ? "1" : "0"}"
+                            type="button"
+                        >
+                            ${guest.checkedIn ? "Desfazer check-in" : "Confirmar check-in"}
+                        </button>
+                    </div>
         </article>
       `;
         })
@@ -291,10 +359,21 @@ function setupInteractions() {
         }
 
         const guestId = button.dataset.id;
-        const currentChecked = button.dataset.checked === "1";
         if (!guestId) {
             return;
         }
+
+        const action = button.dataset.action;
+
+        if (action === "details") {
+            const guest = getGuestById(guestId);
+            if (guest) {
+                openDetailsDialog(guest);
+            }
+            return;
+        }
+
+        const currentChecked = button.dataset.checked === "1";
 
         const card = button.closest(".guest-card");
         const guestName = card ? card.querySelector(".guest-name")?.textContent.trim() : "este convidado";
@@ -313,6 +392,14 @@ function setupInteractions() {
 
     checkinDialogCancel.addEventListener("click", () => {
         closeCheckinDialog();
+    });
+
+    detailsDialogClose.addEventListener("click", () => {
+        closeDetailsDialog();
+    });
+
+    detailsDialogOk.addEventListener("click", () => {
+        closeDetailsDialog();
     });
 }
 
