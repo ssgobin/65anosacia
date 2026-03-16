@@ -1,0 +1,609 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+    addDoc,
+    collection,
+    getDocs,
+    getFirestore,
+    limit,
+    query,
+    serverTimestamp,
+    where,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyD_PzTMUhtk0dGh2X06dufw_NMAesMAZUE",
+    authDomain: "convite65anos.firebaseapp.com",
+    projectId: "convite65anos",
+    storageBucket: "convite65anos.firebasestorage.app",
+    messagingSenderId: "66072908061",
+    appId: "1:66072908061:web:094debb8cf0340268891f4",
+    measurementId: "G-86GT9VL0Y3"
+};
+
+const form = document.getElementById("inviteForm");
+const fullNameGroup = document.getElementById("fullNameGroup");
+const fullName = document.getElementById("fullName");
+const personType = document.getElementById("personType");
+const cpf = document.getElementById("cpf");
+const cnpj = document.getElementById("cnpj");
+const companyName = document.getElementById("companyName");
+const phone = document.getElementById("phone");
+const hasCompanion = document.getElementById("hasCompanion");
+const companionSection = document.getElementById("companionSection");
+const companionFullName = document.getElementById("companionFullName");
+const companionPhone = document.getElementById("companionPhone");
+const companionCpf = document.getElementById("companionCpf");
+const cpfGroup = document.getElementById("cpfGroup");
+const cnpjGroup = document.getElementById("cnpjGroup");
+const companyNameGroup = document.getElementById("companyNameGroup");
+const personTypeGroup = document.getElementById("personTypeGroup");
+const phoneGroup = document.getElementById("phoneGroup");
+const hasCompanionGroup = document.getElementById("hasCompanionGroup");
+const termsSection = document.getElementById("termsSection");
+const feedback = document.getElementById("formFeedback");
+const submitButton = document.getElementById("submitButton");
+const termsDialog = document.getElementById("termsDialog");
+const successDialog = document.getElementById("successDialog");
+const openTermsButton = document.getElementById("openTermsButton");
+const closeTermsButton = document.getElementById("closeTermsButton");
+const agreeTermsButton = document.getElementById("agreeTermsButton");
+const closeSuccessButton = document.getElementById("closeSuccessButton");
+const successMessage = document.getElementById("successMessage");
+const termsAccepted = document.getElementById("termsAccepted");
+const termsStatus = document.getElementById("termsStatus");
+
+const hasFirebaseConfig = Object.values(firebaseConfig).every(
+    (value) => typeof value === "string" && !value.startsWith("COLOQUE_")
+);
+
+let db = null;
+let previousPersonType = "";
+
+if (hasFirebaseConfig) {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+}
+
+function onlyDigits(value) {
+    return value.replace(/\D/g, "");
+}
+
+function formatCpf(value) {
+    const digits = onlyDigits(value).slice(0, 11);
+    return digits
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function formatCnpj(value) {
+    const digits = onlyDigits(value).slice(0, 14);
+    return digits
+        .replace(/^(\d{2})(\d)/, "$1.$2")
+        .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+        .replace(/\.(\d{3})(\d)/, ".$1/$2")
+        .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function formatPhone(value) {
+    const digits = onlyDigits(value).slice(0, 11);
+    if (digits.length <= 10) {
+        return digits
+            .replace(/^(\d{2})(\d)/, "($1) $2")
+            .replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    return digits
+        .replace(/^(\d{2})(\d)/, "($1) $2")
+        .replace(/(\d{5})(\d)/, "$1-$2");
+}
+
+function isValidCpf(value) {
+    const digits = onlyDigits(value);
+
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+        return false;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < 9; i += 1) {
+        sum += Number(digits[i]) * (10 - i);
+    }
+
+    let firstDigit = (sum * 10) % 11;
+    if (firstDigit === 10) {
+        firstDigit = 0;
+    }
+
+    if (firstDigit !== Number(digits[9])) {
+        return false;
+    }
+
+    sum = 0;
+    for (let i = 0; i < 10; i += 1) {
+        sum += Number(digits[i]) * (11 - i);
+    }
+
+    let secondDigit = (sum * 10) % 11;
+    if (secondDigit === 10) {
+        secondDigit = 0;
+    }
+
+    return secondDigit === Number(digits[10]);
+}
+
+function isValidCnpj(value) {
+    const digits = onlyDigits(value);
+
+    if (digits.length !== 14 || /^(\d)\1{13}$/.test(digits)) {
+        return false;
+    }
+
+    const calcDigit = (base, factors) => {
+        const total = base
+            .split("")
+            .reduce((acc, num, index) => acc + Number(num) * factors[index], 0);
+        const rest = total % 11;
+        return rest < 2 ? 0 : 11 - rest;
+    };
+
+    const base = digits.slice(0, 12);
+    const firstFactor = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const secondFactor = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    const firstDigit = calcDigit(base, firstFactor);
+    const secondDigit = calcDigit(base + firstDigit, secondFactor);
+
+    return digits === `${base}${firstDigit}${secondDigit}`;
+}
+
+function isValidPhone(value) {
+    const digits = onlyDigits(value);
+    if (digits.length !== 11) {
+        return false;
+    }
+
+    return digits[2] === "9";
+}
+
+function isValidFullName(value) {
+    const parts = value
+        .trim()
+        .split(/\s+/)
+        .filter((item) => item.length > 1);
+    return parts.length >= 2;
+}
+
+function isValidCompanyName(value) {
+    return value.trim().length >= 2;
+}
+
+function clearInputErrors() {
+    const fields = form.querySelectorAll("input, select, button");
+    fields.forEach((field) => field.classList.remove("input-error"));
+}
+
+function setFeedback(message, type) {
+    feedback.textContent = message;
+    feedback.className = `feedback ${type}`;
+}
+
+function showElement(element) {
+    if (!element.classList.contains("hidden") && element.classList.contains("revealed")) {
+        return;
+    }
+
+    element.classList.remove("hidden");
+    element.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => {
+        element.classList.add("revealed");
+    });
+}
+
+function hideElement(element) {
+    if (element.classList.contains("hidden")) {
+        return;
+    }
+
+    element.classList.add("hidden");
+    element.classList.remove("revealed");
+    element.setAttribute("aria-hidden", "true");
+}
+
+function showSubmitButton(visible) {
+    if (visible) {
+        showElement(submitButton);
+        return;
+    }
+
+    hideElement(submitButton);
+}
+
+function togglePersonDocumentFields() {
+    const selected = personType.value;
+    const personTypeChanged = selected !== previousPersonType;
+
+    cpf.required = false;
+    cnpj.required = false;
+    companyName.required = false;
+
+    if (selected === "PF") {
+        showElement(cpfGroup);
+        hideElement(cnpjGroup);
+        hideElement(companyNameGroup);
+        cpf.required = true;
+        if (personTypeChanged) {
+            cnpj.value = "";
+            companyName.value = "";
+        }
+    }
+
+    if (selected === "PJ") {
+        showElement(cnpjGroup);
+        hideElement(cpfGroup);
+        showElement(companyNameGroup);
+        cnpj.required = true;
+        companyName.required = true;
+        if (personTypeChanged) {
+            cpf.value = "";
+        }
+    }
+
+    if (!selected) {
+        hideElement(cpfGroup);
+        hideElement(cnpjGroup);
+        hideElement(companyNameGroup);
+        if (personTypeChanged) {
+            cpf.value = "";
+            cnpj.value = "";
+            companyName.value = "";
+        }
+    }
+
+    previousPersonType = selected;
+}
+
+function toggleCompanionFields() {
+    const shouldShow = hasCompanion.value === "sim";
+
+    if (shouldShow) {
+        showElement(companionSection);
+    } else {
+        hideElement(companionSection);
+    }
+
+    companionFullName.required = shouldShow;
+    companionPhone.required = shouldShow;
+    companionCpf.required = shouldShow;
+
+    if (!shouldShow) {
+        companionFullName.value = "";
+        companionPhone.value = "";
+        companionCpf.value = "";
+    }
+}
+
+function validateForm() {
+    clearInputErrors();
+    const invalidFields = [];
+
+    if (!isValidFullName(fullName.value)) {
+        invalidFields.push({ field: fullName, message: "Informe nome e sobrenome." });
+    }
+
+    if (personType.value === "PF" && !isValidCpf(cpf.value)) {
+        invalidFields.push({ field: cpf, message: "CPF inválido." });
+    }
+
+    if (personType.value === "PJ" && !isValidCnpj(cnpj.value)) {
+        invalidFields.push({ field: cnpj, message: "CNPJ inválido." });
+    }
+
+    if (personType.value === "PJ" && !isValidCompanyName(companyName.value)) {
+        invalidFields.push({ field: companyName, message: "Informe o nome da empresa." });
+    }
+
+    if (!isValidPhone(phone.value)) {
+        invalidFields.push({
+            field: phone,
+            message: "Celular inválido. Use um número com DDD e 9 dígitos.",
+        });
+    }
+
+    if (!personType.value) {
+        invalidFields.push({ field: personType, message: "Selecione PF ou PJ." });
+    }
+
+    if (!hasCompanion.value) {
+        invalidFields.push({
+            field: hasCompanion,
+            message: "Informe se terá acompanhante.",
+        });
+    }
+
+    if (hasCompanion.value === "sim") {
+        if (!isValidFullName(companionFullName.value)) {
+            invalidFields.push({
+                field: companionFullName,
+                message: "Informe nome e sobrenome do acompanhante.",
+            });
+        }
+
+        if (!isValidPhone(companionPhone.value)) {
+            invalidFields.push({
+                field: companionPhone,
+                message: "Celular do acompanhante inválido.",
+            });
+        }
+
+        if (!isValidCpf(companionCpf.value)) {
+            invalidFields.push({
+                field: companionCpf,
+                message: "CPF do acompanhante inválido.",
+            });
+        }
+    }
+
+    if (termsAccepted.value !== "true") {
+        invalidFields.push({
+            field: openTermsButton,
+            message: "Você precisa aceitar os termos antes de confirmar.",
+        });
+    }
+
+    if (invalidFields.length > 0) {
+        invalidFields[0].field.classList.add("input-error");
+        invalidFields[0].field.focus();
+        setFeedback(invalidFields[0].message, "error");
+        return false;
+    }
+
+    return true;
+}
+
+function setupInputMasks() {
+    cpf.addEventListener("input", () => {
+        cpf.value = formatCpf(cpf.value);
+    });
+
+    cnpj.addEventListener("input", () => {
+        cnpj.value = formatCnpj(cnpj.value);
+    });
+
+    phone.addEventListener("input", () => {
+        phone.value = formatPhone(phone.value);
+    });
+
+    companionCpf.addEventListener("input", () => {
+        companionCpf.value = formatCpf(companionCpf.value);
+    });
+
+    companionPhone.addEventListener("input", () => {
+        companionPhone.value = formatPhone(companionPhone.value);
+    });
+}
+
+function setupTermsDialog() {
+    openTermsButton.addEventListener("click", () => {
+        if (typeof termsDialog.showModal === "function") {
+            termsDialog.showModal();
+            return;
+        }
+
+        termsDialog.setAttribute("open", "true");
+    });
+
+    closeTermsButton.addEventListener("click", () => {
+        if (typeof termsDialog.close === "function") {
+            termsDialog.close();
+            return;
+        }
+
+        termsDialog.removeAttribute("open");
+    });
+
+    agreeTermsButton.addEventListener("click", () => {
+        termsAccepted.value = "true";
+        termsStatus.textContent = "Termos aceitos.";
+        termsStatus.classList.add("agreed");
+        if (typeof termsDialog.close === "function") {
+            termsDialog.close();
+        } else {
+            termsDialog.removeAttribute("open");
+        }
+        setFeedback("", "");
+        updateProgressiveFlow();
+    });
+}
+
+function setupSuccessDialog() {
+    closeSuccessButton.addEventListener("click", () => {
+        if (typeof successDialog.close === "function") {
+            successDialog.close();
+            return;
+        }
+
+        successDialog.removeAttribute("open");
+    });
+}
+
+function openSuccessDialog(guestName) {
+    const firstName = guestName.trim().split(/\s+/)[0] || "Convidado";
+    successMessage.textContent = `${firstName}, sua presença está confirmada! Obrigado por fazer parte da celebração dos 65 anos da ACIA. Prepare-se para uma noite especial.`;
+
+    if (typeof successDialog.showModal === "function") {
+        successDialog.showModal();
+        return;
+    }
+
+    successDialog.setAttribute("open", "true");
+}
+
+function updateProgressiveFlow() {
+    showElement(fullNameGroup);
+
+    const fullNameDone = isValidFullName(fullName.value);
+    const personTypeDone = personType.value === "PF" || personType.value === "PJ";
+    const documentDone =
+        (personType.value === "PF" && isValidCpf(cpf.value)) ||
+        (personType.value === "PJ" && isValidCnpj(cnpj.value));
+    const companyDone = personType.value !== "PJ" || isValidCompanyName(companyName.value);
+    const phoneDone = isValidPhone(phone.value);
+    const companionChoiceDone = hasCompanion.value === "sim" || hasCompanion.value === "nao";
+    const companionDone =
+        hasCompanion.value === "nao" ||
+        (hasCompanion.value === "sim" &&
+            isValidFullName(companionFullName.value) &&
+            isValidPhone(companionPhone.value) &&
+            isValidCpf(companionCpf.value));
+
+    if (fullNameDone) {
+        showElement(personTypeGroup);
+    } else {
+        hideElement(personTypeGroup);
+    }
+
+    if (personTypeDone) {
+        togglePersonDocumentFields();
+    } else {
+        hideElement(cpfGroup);
+        hideElement(cnpjGroup);
+    }
+
+    if (documentDone && companyDone) {
+        showElement(phoneGroup);
+    } else {
+        hideElement(phoneGroup);
+    }
+
+    if (phoneDone) {
+        showElement(hasCompanionGroup);
+    } else {
+        hideElement(hasCompanionGroup);
+        hideElement(companionSection);
+    }
+
+    if (companionChoiceDone) {
+        toggleCompanionFields();
+    } else {
+        hideElement(companionSection);
+    }
+
+    if (companionChoiceDone && companionDone) {
+        showElement(termsSection);
+    } else {
+        hideElement(termsSection);
+        termsAccepted.value = "false";
+        termsStatus.textContent = "Termos ainda não aceitos.";
+        termsStatus.classList.remove("agreed");
+    }
+
+    showSubmitButton(companionChoiceDone && companionDone);
+}
+
+async function handleSubmit(event) {
+    event.preventDefault();
+    setFeedback("", "");
+
+    if (!validateForm()) {
+        return;
+    }
+
+    if (!db) {
+        setFeedback(
+            "Configure o Firebase em app.js antes de enviar os dados.",
+            "error"
+        );
+        return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = "Enviando...";
+
+    const primaryDocument =
+        personType.value === "PF" ? onlyDigits(cpf.value) : onlyDigits(cnpj.value);
+
+    const duplicateQuery =
+        personType.value === "PF"
+            ? query(
+                collection(db, "confirmacoes_jantar"),
+                where("personType", "==", "PF"),
+                where("cpf", "==", primaryDocument),
+                limit(1)
+            )
+            : query(
+                collection(db, "confirmacoes_jantar"),
+                where("personType", "==", "PJ"),
+                where("cnpj", "==", primaryDocument),
+                limit(1)
+            );
+
+    try {
+        const duplicateSnapshot = await getDocs(duplicateQuery);
+        if (!duplicateSnapshot.empty) {
+            setFeedback("Já existe uma confirmação para este CPF/CNPJ.", "error");
+            if (personType.value === "PF") {
+                cpf.focus();
+            } else {
+                cnpj.focus();
+            }
+            return;
+        }
+
+        const payload = {
+            fullName: fullName.value.trim(),
+            personType: personType.value,
+            cpf: personType.value === "PF" ? onlyDigits(cpf.value) : null,
+            cnpj: personType.value === "PJ" ? onlyDigits(cnpj.value) : null,
+            companyName: personType.value === "PJ" ? companyName.value.trim() : null,
+            documentNumber: primaryDocument,
+            phone: onlyDigits(phone.value),
+            hasCompanion: hasCompanion.value === "sim",
+            companion:
+                hasCompanion.value === "sim"
+                    ? {
+                        fullName: companionFullName.value.trim(),
+                        phone: onlyDigits(companionPhone.value),
+                        cpf: onlyDigits(companionCpf.value),
+                    }
+                    : null,
+            acceptedTerms: true,
+            acceptedTermsAt: new Date().toISOString(),
+            createdAt: serverTimestamp(),
+        };
+
+        await addDoc(collection(db, "confirmacoes_jantar"), payload);
+
+        setFeedback("Confirmação enviada com sucesso.", "success");
+        openSuccessDialog(fullName.value);
+        form.reset();
+        termsAccepted.value = "false";
+        termsStatus.textContent = "Termos ainda não aceitos.";
+        termsStatus.classList.remove("agreed");
+        togglePersonDocumentFields();
+        toggleCompanionFields();
+        updateProgressiveFlow();
+    } catch (error) {
+        setFeedback("Não foi possível salvar no Firebase. Tente novamente.", "error");
+        console.error(error);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Confirmar";
+    }
+}
+
+setupInputMasks();
+setupTermsDialog();
+setupSuccessDialog();
+updateProgressiveFlow();
+
+fullName.addEventListener("input", updateProgressiveFlow);
+personType.addEventListener("change", updateProgressiveFlow);
+cpf.addEventListener("input", updateProgressiveFlow);
+cnpj.addEventListener("input", updateProgressiveFlow);
+companyName.addEventListener("input", updateProgressiveFlow);
+phone.addEventListener("input", updateProgressiveFlow);
+hasCompanion.addEventListener("change", updateProgressiveFlow);
+companionFullName.addEventListener("input", updateProgressiveFlow);
+companionPhone.addEventListener("input", updateProgressiveFlow);
+companionCpf.addEventListener("input", updateProgressiveFlow);
+form.addEventListener("submit", handleSubmit);

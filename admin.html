@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração | ACIA 65 Anos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+    <main class="admin-page">
+        <section class="admin-card">
+            <header class="admin-header">
+                <p class="kicker">Painel de Controle</p>
+                <h1>Administração do Evento - ACIA 65 Anos</h1>
+                <p class="subtitle">Acompanhe os convidados confirmados e marque presença na recepção.</p>
+                <div class="admin-top-actions">
+                    <span id="adminEmailBadge" class="admin-email">Administrador</span>
+                    <button id="logoutButton" class="logout-button" type="button">Sair</button>
+                </div>
+                <a class="back-link" href="index.html">Voltar para formulário</a>
+            </header>
+
+            <section class="stats-grid" aria-label="Resumo de presença">
+                <article class="stat-box">
+                    <h2>Total confirmados</h2>
+                    <p id="totalCount">0</p>
+                </article>
+                <article class="stat-box">
+                    <h2>Check-in realizado</h2>
+                    <p id="checkedInCount">0</p>
+                </article>
+                <article class="stat-box">
+                    <h2>Aguardando chegada</h2>
+                    <p id="pendingCount">0</p>
+                </article>
+            </section>
+
+            <section class="filters">
+                <label for="searchInput">Buscar convidado</label>
+                <input id="searchInput" type="search" placeholder="Digite nome, CPF/CNPJ ou telefone">
+            </section>
+
+            <section id="adminFeedback" class="admin-feedback" aria-live="polite"></section>
+
+            <section id="guestList" class="guest-list" aria-label="Lista de convidados"></section>
+        </section>
+    </main>
+
+    <dialog id="checkinDialog" class="checkin-dialog" aria-labelledby="checkinDialogTitle">
+        <article>
+            <p class="checkin-dialog-icon" aria-hidden="true">✅</p>
+            <h3 id="checkinDialogTitle">Confirmar chegada?</h3>
+            <p id="checkinDialogMessage">Deseja registrar a chegada deste convidado na recepção?</p>
+            <div class="dialog-actions">
+                <button id="checkinDialogConfirm" class="primary-button" type="button">Sim, confirmar chegada</button>
+                <button id="checkinDialogCancel" class="secondary-button" type="button">Cancelar</button>
+            </div>
+        </article>
+    </dialog>
+
+    <script type="module" src="admin.js"></script>
+</body>
+
+</html>

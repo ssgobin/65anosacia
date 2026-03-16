@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Presença | Jantar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <main class="page">
+        <section class="card">
+            <header class="card-header">
+                <p class="kicker">Convite Especial</p>
+                <h1>Confirmação de Presença</h1>
+                <p class="subtitle">Preencha seus dados para confirmar sua presença no jantar.</p>
+                <a class="admin-link hidden" href="admin-login.html">Abrir administração</a>
+            </header>
+
+            <form id="inviteForm" novalidate>
+                <div id="fullNameGroup" class="field-group revealable">
+                    <label for="fullName">Nome completo</label>
+                    <input id="fullName" name="fullName" type="text" placeholder="Ex.: Maria Silva" autocomplete="name"
+                        required>
+                </div>
+
+                <div id="personTypeGroup" class="field-row revealable hidden" aria-hidden="true">
+                    <div class="field-group">
+                        <label for="personType">Tipo de pessoa</label>
+                        <select id="personType" name="personType" required>
+                            <option value="">Selecione</option>
+                            <option value="PF">Pessoa Física (PF)</option>
+                            <option value="PJ">Pessoa Jurídica (PJ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="cpfGroup" class="field-group revealable hidden" aria-hidden="true">
+                    <label for="cpf">CPF</label>
+                    <input id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00"
+                        maxlength="14">
+                </div>
+
+                <div id="cnpjGroup" class="field-group revealable hidden" aria-hidden="true">
+                    <label for="cnpj">CNPJ</label>
+                    <input id="cnpj" name="cnpj" type="text" inputmode="numeric" placeholder="00.000.000/0000-00"
+                        maxlength="18">
+                </div>
+
+                <div id="companyNameGroup" class="field-group revealable hidden" aria-hidden="true">
+                    <label for="companyName">Nome da empresa</label>
+                    <input id="companyName" name="companyName" type="text" placeholder="Ex.: Associação Comercial de Americana" autocomplete="organization">
+                </div>
+
+                <div id="phoneGroup" class="field-group revealable hidden" aria-hidden="true">
+                    <label for="phone">Celular / WhatsApp</label>
+                    <input id="phone" name="phone" type="text" inputmode="numeric" placeholder="(00) 00000-0000"
+                        maxlength="15" required>
+                </div>
+
+                <div id="hasCompanionGroup" class="field-row revealable hidden" aria-hidden="true">
+                    <div class="field-group">
+                        <label for="hasCompanion">Levará acompanhante?</label>
+                        <select id="hasCompanion" name="hasCompanion" required>
+                            <option value="">Selecione</option>
+                            <option value="nao">Não</option>
+                            <option value="sim">Sim</option>
+                        </select>
+                    </div>
+                </div>
+
+                <fieldset id="companionSection" class="companion revealable hidden" aria-hidden="true">
+                    <legend>Dados do acompanhante</legend>
+
+                    <div class="field-group">
+                        <label for="companionFullName">Nome completo do acompanhante</label>
+                        <input id="companionFullName" name="companionFullName" type="text"
+                            placeholder="Ex.: João Pereira" autocomplete="name">
+                    </div>
+
+                    <div class="field-group">
+                        <label for="companionPhone">Celular / WhatsApp do acompanhante</label>
+                        <input id="companionPhone" name="companionPhone" type="text" inputmode="numeric"
+                            placeholder="(00) 00000-0000" maxlength="15">
+                    </div>
+
+                    <div class="field-group">
+                        <label for="companionCpf">CPF do acompanhante</label>
+                        <input id="companionCpf" name="companionCpf" type="text" inputmode="numeric"
+                            placeholder="000.000.000-00" maxlength="14">
+                    </div>
+                </fieldset>
+
+                <section id="termsSection" class="terms-section revealable hidden" aria-hidden="true">
+                    <h2>Termos de Participação</h2>
+                    <p>Antes de confirmar, leia e concorde com os termos do evento.</p>
+                    <button type="button" id="openTermsButton" class="secondary-button">Ler termos</button>
+                    <input type="hidden" id="termsAccepted" name="termsAccepted" value="false">
+                    <p id="termsStatus" class="terms-status">Termos ainda não aceitos.</p>
+                </section>
+
+                <div id="formFeedback" class="feedback" aria-live="polite"></div>
+
+                <button id="submitButton" class="primary-button hidden" type="submit"
+                    aria-hidden="true">Confirmar</button>
+            </form>
+        </section>
+    </main>
+
+    <dialog id="termsDialog" class="terms-dialog">
+        <article>
+            <h3>Termo de Concordância do Evento</h3>
+            <p>Ao participar deste jantar, você confirma que as informações enviadas são verdadeiras, autoriza o uso dos
+                dados exclusivamente para organização e contato sobre este evento, e se compromete a manter uma conduta
+                respeitosa com todos os convidados e equipe organizadora.</p>
+            <p>Se necessário, poderemos entrar em contato para ajustar detalhes logísticos. Seus dados não serão
+                comercializados e serão tratados com confidencialidade.</p>
+            <div class="dialog-actions">
+                <button type="button" id="agreeTermsButton" class="primary-button">Concordo com os termos</button>
+                <button type="button" id="closeTermsButton" class="secondary-button">Fechar</button>
+            </div>
+        </article>
+    </dialog>
+
+    <dialog id="successDialog" class="success-dialog" aria-labelledby="successTitle">
+        <article>
+            <div class="success-badge">ACIA 65 ANOS</div>
+            <h3 id="successTitle">Presença confirmada com sucesso!</h3>
+            <p id="successMessage">Sua participação foi registrada. Vai ser uma noite inesquecível para celebrar essa
+                história com a ACIA.</p>
+            <div class="celebration-stars" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" id="closeSuccessButton" class="primary-button">Que venha a festa!</button>
+            </div>
+        </article>
+    </dialog>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

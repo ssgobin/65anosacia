@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin | ACIA 65 Anos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="admin-login.css">
+</head>
+
+<body>
+    <main class="login-page">
+        <section class="login-card">
+            <header>
+                <p class="kicker">Área Restrita</p>
+                <h1>Login de Administração</h1>
+                <p class="subtitle">Entre com a conta administradora para acessar o controle de presença da recepção.
+                </p>
+            </header>
+
+            <form id="adminLoginForm" novalidate>
+                <div class="field-group">
+                    <label for="adminEmail">E-mail</label>
+                    <input id="adminEmail" name="adminEmail" type="email" placeholder="admin@dominio.com"
+                        autocomplete="email" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="adminPassword">Senha</label>
+                    <input id="adminPassword" name="adminPassword" type="password" placeholder="Sua senha"
+                        autocomplete="current-password" required>
+                </div>
+
+                <div id="loginFeedback" class="login-feedback" aria-live="polite"></div>
+
+                <button id="loginButton" class="primary-button" type="submit">Entrar no painel</button>
+            </form>
+
+            <a class="back-link" href="index.html">Voltar para o formulário</a>
+            <p class="hint">Somente e-mails autorizados podem acessar a administração.</p>
+        </section>
+    </main>
+
+    <script type="module" src="admin-login.js"></script>
+</body>
+
+</html>
