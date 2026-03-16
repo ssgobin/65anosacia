@@ -19,7 +19,7 @@
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: "Sora", sans-serif;
+    font-family: "Montserrat", sans-serif;
     color: var(--ink);
     background:
         radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.92), transparent 34%),
@@ -44,6 +44,19 @@ body {
     overflow: hidden;
 }
 
+.brand {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 12px;
+}
+
+.brand-logo {
+    width: min(100%, 260px);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(30, 64, 175, 0.18));
+}
+
 .kicker {
     margin: 0 0 8px;
     color: var(--accent);
@@ -55,13 +68,15 @@ body {
 
 .admin-header h1 {
     margin: 0;
-    font-family: "Fraunces", serif;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 900;
     font-size: clamp(1.45rem, 2.8vw, 2.3rem);
 }
 
 .subtitle {
     margin: 8px 0 10px;
     color: var(--muted);
+    font-weight: 300;
 }
 
 .admin-top-actions {
@@ -331,7 +346,8 @@ body {
 
 .checkin-dialog h3 {
     margin: 0 0 8px;
-    font-family: "Fraunces", serif;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 900;
     font-size: 1.3rem;
     color: #0f172a;
 }
@@ -339,6 +355,7 @@ body {
 .checkin-dialog p {
     margin: 0 0 18px;
     color: #334155;
+    font-weight: 300;
 }
 
 @keyframes popupEnter {
@@ -367,6 +384,10 @@ body {
     .admin-card {
         border-radius: 16px;
         padding: 16px;
+    }
+
+    .brand-logo {
+        width: min(100%, 210px);
     }
 
     .admin-page {
