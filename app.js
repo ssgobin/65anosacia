@@ -2,6 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
     addDoc,
     collection,
+    doc,
+    getDoc,
     getDocs,
     getFirestore,
     limit,
@@ -58,10 +60,108 @@ const hasFirebaseConfig = Object.values(firebaseConfig).every(
 
 let db = null;
 let previousPersonType = "";
+let isFormBlocked = false;
+let blockMessage = "O tempo de confirmação acabou :( A confirmação de presença foi encerrada. Caso tenha alguma dúvida, entre em contato com: 19 99246-2193";
+
+// Configurações padrões
+const DEFAULT_CONFIG = {
+    eventTitle: "Celebração dos 65 anos da ACIA",
+    eventDate: "2026-03-26",
+    eventTime: "19:00",
+    eventLocation: "Villa Americana",
+    eventMapsUrl: "https://www.google.com/maps/place/Villa+Americana+Eventos/@-22.7390903,-47.3291581,18z/data=!4m10!1m2!2m1!1sVilla+Americana+Americana+SP!3m6!1s0x94c89a4c64890eef:0xf745d6a03ce059ed!8m2!3d-22.739139!4d-47.3269233!15sChxWaWxsYSBBbWVyaWNhbmEgQW1lcmljYW5hIFNQWh4iHHZpbGxhIGFtZXJpY2FuYSBhbWVyaWNhbmEgc3CSAQtldmVudF92ZW51ZZoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOUU5XWlVSMWgzRUFF4AEA-gEECAAQHg!16s%2Fg%2F11b6f03vjh?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D",
+    blockDate: "2026-03-20",
+    blockTime: "12:00",
+    blockMessage: "O tempo de confirmação acabou :(\nA confirmação de presença foi encerrada.\n\nCaso tenha alguma dúvida, entre em contato com: 19 99246-2193",
+    supportPhone: "19 99246-2193",
+    successMessage: "Sua participação foi registrada. Vai ser uma noite inesquecível para celebrar essa história com a ACIA.",
+    termsText: "Ao participar deste jantar, você confirma que as informações enviadas são verdadeiras, autoriza o uso dos dados exclusivamente para organização e contato sobre este evento, e se compromete a manter uma conduta respeitosa com todos os convidados e equipe organizadora.\n\nSe necessário, poderemos entrar em contato para ajustar detalhes logísticos. Seus dados não serão comercializados e serão tratados com confidencialidade.",
+};
 
 if (hasFirebaseConfig) {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
+}
+
+async function loadPageConfig() {
+    if (!db) {
+        return DEFAULT_CONFIG;
+    }
+
+    try {
+        const configDoc = await getDoc(doc(db, "config", "sistema"));
+        if (configDoc.exists()) {
+            return { ...DEFAULT_CONFIG, ...configDoc.data() };
+        }
+    } catch (error) {
+        console.error("Erro ao carregar configurações:", error);
+    }
+
+    return DEFAULT_CONFIG;
+}
+
+async function updatePageConfig() {
+    const config = await loadPageConfig();
+
+    // Atualizar header
+    const header = document.querySelector(".card-header");
+    if (header) {
+        const h1 = header.querySelector("h1");
+        const subtitle = header.querySelector(".subtitle");
+        const mapLink = header.querySelector(".map-link");
+
+        if (h1) h1.textContent = config.eventTitle;
+        const [year, month, day] = config.eventDate.split("-");
+        const formattedDate = new Date(+year, +month - 1, +day).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+        if (subtitle) subtitle.innerHTML = `${formattedDate}<br>às ${config.eventTime}<br>Local: ${config.eventLocation}`;
+        if (mapLink) mapLink.href = config.eventMapsUrl;
+    }
+
+    // Atualizar dialog de termos
+    const termsDialog = document.querySelector("#termsDialog article");
+    if (termsDialog) {
+        const p = termsDialog.querySelector("p:nth-of-type(1)");
+        if (p) p.textContent = config.termsText;
+    }
+
+    blockMessage = config.blockMessage || DEFAULT_CONFIG.blockMessage;
+    successMessage.textContent = config.successMessage || DEFAULT_CONFIG.successMessage;
+}
+
+async function checkFormBlockStatus() {
+    if (!db) {
+        return false;
+    }
+
+    try {
+        const configDoc = await getDoc(doc(db, "config", "sistema"));
+        if (configDoc.exists()) {
+            const config = configDoc.data();
+            const blockDate = config.blockDate;
+            const blockTime = config.blockTime;
+
+            if (blockDate && blockTime) {
+                const now = new Date();
+                const blockDateTime = new Date(blockDate + "T" + blockTime);
+                return now > blockDateTime;
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar configurações:", error);
+    }
+
+    return false;
+}
+
+function displayBlockMessage() {
+    form.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+            <h2 style="color: #c0392b; font-size: 1.5em; margin-bottom: 20px;">Confirmação Encerrada</h2>
+            <p style="font-size: 1.1em; line-height: 1.6; color: #555; margin-bottom: 20px;">
+                ${blockMessage.replace(/\n/g, '<br>')}
+            </p>
+        </div>
+    `;
 }
 
 function onlyDigits(value) {
@@ -891,3 +991,12 @@ companionCpf.addEventListener("blur", () => {
 });
 
 form.addEventListener("submit", handleSubmit);
+
+// Carregar configurações e verificar bloqueio ao carregar a página
+(async () => {
+    await updatePageConfig();
+    isFormBlocked = await checkFormBlockStatus();
+    if (isFormBlocked) {
+        displayBlockMessage();
+    }
+})();

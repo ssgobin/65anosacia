@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração TI | ACIA 65 Anos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="adm_ti.css">
+</head>
+
+<body>
+    <main class="admin-page">
+        <section class="admin-card">
+            <header class="admin-header">
+                <div class="brand">
+                    <img class="brand-logo" src="img/LOGO-ACIA_65_PRINCIPAL.png" alt="Logo oficial ACIA 65 anos">
+                </div>
+                <p class="kicker">Painel de Controle TI</p>
+                <h1>Administração do Sistema - ACIA 65 Anos</h1>
+                <p class="subtitle">Configure todas as opções do sistema.</p>
+                <div class="admin-top-actions">
+                    <span id="adminEmailBadge" class="admin-email">Administrador</span>
+                    <button id="logoutButton" class="logout-button" type="button">Sair</button>
+                </div>
+                <a class="back-link" href="admin.html">Voltar para painel principal</a>
+            </header>
+
+            <div id="loginContainer" class="login-container hidden">
+                <article class="login-card">
+                    <h2>Acesso Restrito</h2>
+                    <p>Faça login com uma conta de administrador para acessar esta página.</p>
+                    <div id="loginFeedback" class="feedback"></div>
+                </article>
+            </div>
+
+            <div id="configContainer" class="config-container hidden">
+                <div class="tabs-header">
+                    <button class="tab-button active" data-tab="evento">📅 Evento</button>
+                    <button class="tab-button" data-tab="bloqueio">🔒 Bloqueio</button>
+                    <button class="tab-button" data-tab="contato">📞 Contato</button>
+                    <button class="tab-button" data-tab="admin">👤 Administração</button>
+                    <button class="tab-button" data-tab="mensagens">💬 Mensagens</button>
+                </div>
+
+                <!-- ABA: EVENTO -->
+                <section id="evento" class="config-section active-tab">
+                    <h2>Configurações do Evento</h2>
+                    <div class="config-form">
+                        <fieldset>
+                            <legend>Informações Básicas</legend>
+                            
+                            <div class="field-group">
+                                <label for="eventTitle">Título do Evento</label>
+                                <input id="eventTitle" type="text" placeholder="Ex.: Celebração dos 65 anos da ACIA">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="field-group">
+                                    <label for="eventDate">Data do Evento</label>
+                                    <input id="eventDate" type="date">
+                                </div>
+                                <div class="field-group">
+                                    <label for="eventTime">Hora do Evento</label>
+                                    <input id="eventTime" type="time">
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label for="eventLocation">Local do Evento</label>
+                                <input id="eventLocation" type="text" placeholder="Ex.: Villa Americana">
+                            </div>
+
+                            <div class="field-group">
+                                <label for="eventMapsUrl">URL do Google Maps</label>
+                                <input id="eventMapsUrl" type="url" placeholder="https://www.google.com/maps/...">
+                                <small class="field-hint">Cole a URL completa do Google Maps para o local do evento</small>
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="button" class="save-btn primary-button">Salvar Evento</button>
+                        </div>
+                        <div class="config-feedback" aria-live="polite"></div>
+                    </div>
+                </section>
+
+                <!-- ABA: BLOQUEIO -->
+                <section id="bloqueio" class="config-section">
+                    <h2>Configurações de Bloqueio</h2>
+                    <div class="config-form">
+                        <fieldset>
+                            <legend>Data e Hora de Bloqueio</legend>
+                            <p class="field-hint">Defina quando as confirmações serão encerradas automaticamente.</p>
+
+                            <div class="form-row">
+                                <div class="field-group">
+                                    <label for="blockDate">Data de Bloqueio</label>
+                                    <input id="blockDate" type="date">
+                                </div>
+                                <div class="field-group">
+                                    <label for="blockTime">Hora de Bloqueio</label>
+                                    <input id="blockTime" type="time">
+                                </div>
+                            </div>
+
+                            <div class="field-info">
+                                <p><strong>Data/Hora de bloqueio atual:</strong></p>
+                                <p id="currentBlockDateTime">Carregando...</p>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Mensagem de Bloqueio</legend>
+                            <p class="field-hint">Esta mensagem será exibida quando as confirmações forem encerradas.</p>
+
+                            <div class="field-group">
+                                <label for="blockMessage">Mensagem</label>
+                                <textarea id="blockMessage" rows="4" placeholder="Digite a mensagem que será exibida..."></textarea>
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="button" class="save-btn primary-button">Salvar Bloqueio</button>
+                            <button type="button" class="reset-btn secondary-button">Restaurar Padrões</button>
+                        </div>
+                        <div class="config-feedback" aria-live="polite"></div>
+                    </div>
+                </section>
+
+                <!-- ABA: CONTATO -->
+                <section id="contato" class="config-section">
+                    <h2>Informações de Contato</h2>
+                    <div class="config-form">
+                        <fieldset>
+                            <legend>Telefone de Suporte</legend>
+                            <p class="field-hint">Número de WhatsApp/Telefone para contato em caso de dúvidas.</p>
+
+                            <div class="field-group">
+                                <label for="supportPhone">Telefone</label>
+                                <input id="supportPhone" type="tel" placeholder="(00) 00000-0000">
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="button" class="save-btn primary-button">Salvar Contato</button>
+                        </div>
+                        <div class="config-feedback" aria-live="polite"></div>
+                    </div>
+                </section>
+
+                <!-- ABA: ADMINISTRAÇÃO -->
+                <section id="admin" class="config-section">
+                    <h2>Gerenciamento de Administradores</h2>
+                    <div class="config-form">
+                        <fieldset>
+                            <legend>Emails Autorizados</legend>
+                            <p class="field-hint">Adicione os emails que podem acessar a administração (um por linha).</p>
+
+                            <div class="field-group">
+                                <label for="adminEmails">Emails de Administrador</label>
+                                <textarea id="adminEmails" rows="4" placeholder="admin@acia.com.br&#10;outro@acia.com.br"></textarea>
+                                <small class="field-hint">Um email por linha</small>
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="button" class="save-btn primary-button">Salvar Emails</button>
+                        </div>
+                        <div class="config-feedback" aria-live="polite"></div>
+                    </div>
+                </section>
+
+                <!-- ABA: MENSAGENS -->
+                <section id="mensagens" class="config-section">
+                    <h2>Mensagens do Sistema</h2>
+                    <div class="config-form">
+                        <fieldset>
+                            <legend>Mensagem de Sucesso</legend>
+                            <p class="field-hint">Exibida quando a confirmação é enviada com sucesso.</p>
+
+                            <div class="field-group">
+                                <label for="successMessage">Mensagem</label>
+                                <textarea id="successMessage" rows="3" placeholder="Sua participação foi registrada..."></textarea>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Termos de Participação</legend>
+                            <p class="field-hint">Texto dos termos que o convidado deve aceitar.</p>
+
+                            <div class="field-group">
+                                <label for="termsText">Texto dos Termos</label>
+                                <textarea id="termsText" rows="5" placeholder="Ao participar deste jantar..."></textarea>
+                            </div>
+                        </fieldset>
+
+                        <div class="form-actions">
+                            <button type="button" class="save-btn primary-button">Salvar Mensagens</button>
+                        </div>
+                        <div class="config-feedback" aria-live="polite"></div>
+                    </div>
+                </section>
+
+                <!-- INFORMAÇÕES DO SISTEMA -->
+                <section class="info-section">
+                    <h2>Informações do Sistema</h2>
+
+                    <div class="info-grid">
+                        <article class="info-box">
+                            <h3>Data Atual</h3>
+                            <p id="currentDateTime">--/--/---- --:--</p>
+                        </article>
+                        <article class="info-box">
+                            <h3>Status do Formulário</h3>
+                            <p id="formStatus">Carregando...</p>
+                        </article>
+                        <article class="info-box">
+                            <h3>Autenticação</h3>
+                            <p id="authStatus">Carregando...</p>
+                        </article>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="adm_ti.js"></script>
+</body>
+
+</html>

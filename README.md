@@ -46,3 +46,147 @@ Os registros sao salvos na colecao:
 - Celular: mascara BR e validacao de 11 digitos (com nono digito).
 - Acompanhante: campos obrigatorios e validados quando selecionado "sim".
 - Termos: envio bloqueado ate aceitar os termos.
+
+## 5) Bloqueio Automático de Confirmações
+
+### Como Funciona
+
+O sistema bloqueia automaticamente as confirmações após uma data/hora especificada. Por padrão, o bloqueio ocorre em **20/03/2026 às 12:00**.
+
+### Dados Armazenados
+
+As configurações de bloqueio são armazenadas no Firestore no documento `config/sistema`:
+
+```
+{
+  blockDate: "YYYY-MM-DD",      // Data de bloqueio
+  blockTime: "HH:MM",           // Hora de bloqueio
+  blockMessage: "mensagem",     // Mensagem customizada
+  updatedAt: "ISO datetime"     // Timestamp da atualização
+}
+```
+
+### Mensagem Padrão de Bloqueio
+
+Quando o formulário está bloqueado, exibe:
+> O tempo de confirmação acabou :( A confirmação de presença foi encerrada. Caso tenha alguma dúvida, entre em contato com: 19 99246-2193
+
+## 6) Página de Administração TI (adm_ti.html) - TOTALMENTE CONFIGURÁVEL
+
+### 🎛️ Tudo é Configurável!
+
+A página adm_ti permite alterar **TODAS** as configurações do sistema através de 5 abas:
+
+#### 📅 ABA 1: EVENTO
+- **Título do Evento** - Nome do evento
+- **Data do Evento** - Formato: YYYY-MM-DD
+- **Hora do Evento** - Formato: HH:MM
+- **Local do Evento** - Nome do local
+- **URL do Google Maps** - Link completo do mapa
+
+*Estas mudanças são refletidas imediatamente na página de confirmação (index.html)*
+
+#### 🔒 ABA 2: BLOQUEIO
+- **Data de Bloqueio** - Quando encerrar as confirmações
+- **Hora de Bloqueio** - Horário específico
+- **Mensagem de Bloqueio** - Texto customizado quando formulário bloqueia
+- **Botão "Restaurar Padrões"** - Volta TODAS as configurações aos valores iniciais
+
+#### 📞 ABA 3: CONTATO
+- **Telefone de Suporte** - WhatsApp/Telefone para dúvidas
+- Este telefone é mencionado na mensagem de bloqueio padrão
+
+#### 👤 ABA 4: ADMINISTRAÇÃO
+- **Emails Autorizados** - Lista de emails que podem acessar adm_ti
+- Um email por linha
+- Emails sãoautomaticamente convertidos para lowercase
+- Qualquer pessoa pode fazer login com email de admin no sistema - será redirecionada se não está na lista autorizada
+
+#### 💬 ABA 5: MENSAGENS
+- **Mensagem de Sucesso** - Exibida quando confirmação é enviada
+- **Termos de Participação** - Texto que convidado deve aceitar
+- Suporta quebra de linhas
+
+### Dados Armazenados no Firestore
+
+Tudo é salvo em: `config/sistema`
+
+```
+{
+  // Evento
+  eventTitle: string,
+  eventDate: "YYYY-MM-DD",
+  eventTime: "HH:MM",
+  eventLocation: string,
+  eventMapsUrl: string,
+  
+  // Bloqueio
+  blockDate: "YYYY-MM-DD",
+  blockTime: "HH:MM",
+  blockMessage: string,
+  
+  // Contato
+  supportPhone: string,
+  
+  // Administração
+  allowedAdminEmails: [string],
+  
+  // Mensagens
+  successMessage: string,
+  termsText: string,
+  
+  // Metadados
+  updatedAt: ISO datetime
+}
+```
+
+### Valores Padrão
+
+Se nenhuma configuração for salva, o sistema usa estes valores:
+
+```js
+{
+  eventTitle: "Celebração dos 65 anos da ACIA",
+  eventDate: "2026-03-26",
+  eventTime: "19:00",
+  eventLocation: "Villa Americana",
+  eventMapsUrl: "https://www.google.com/maps/...",
+  blockDate: "2026-03-20",
+  blockTime: "12:00",
+  blockMessage: "O tempo de confirmação acabou :(\nA confirmação de presença foi encerrada.\nCaso tenha alguma dúvida, entre em contato com: 19 99246-2193",
+  supportPhone: "19 99246-2193",
+  allowedAdminEmails: ["admin@acia.com.br"],
+  successMessage: "Sua participação foi registrada. Vai ser uma noite inesquecível...",
+  termsText: "Ao participar deste jantar, você confirma que..."
+}
+```
+
+### Acesso
+
+1. Clique em "⚙️ Configurações do Sistema" no painel principal (admin.html)
+2. Faça login com uma conta de administrador (padrão: admin@acia.com.br)
+3. Edite qualquer configuração nas abas
+4. Clique em "Salvar" na aba correspondente
+5. As mudanças são aplicadas imediatamente em todo o sistema
+
+### Fluxo de Configuração
+
+```
+Usuário faz login → Vai para adm_ti → Edita configurações → Clica Salvar
+                                              ↓
+                                    Firestore recebe dados
+                                              ↓
+                                    index.html carrega config
+                                              ↓
+                                    Página atualiza dinamicamente
+```
+
+### Exemplo de Uso
+
+Para mudar a data do evento:
+1. Vá para **adm_ti.html** → Aba **📅 Evento**
+2. Altere "Data do Evento" para a nova data
+3. Clique "Salvar Evento"
+4. Pronto! A página de confirmação (index.html) já mostra a nova data
+
+
