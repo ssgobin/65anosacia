@@ -222,13 +222,16 @@ function setFieldError(field, message) {
 
     const key = field.id || field.name || "generic";
     const errorId = `error-${key}`;
+    let errorElement = container.querySelector(`#${errorId}`);
 
-    if (!container.querySelector(`#${errorId}`)) {
+    if (!errorElement) {
         const error = document.createElement("p");
         error.id = errorId;
         error.className = "field-error";
         error.textContent = message;
         container.appendChild(error);
+    } else {
+        errorElement.textContent = message;
     }
 
     field.classList.add("input-error");
@@ -331,6 +334,9 @@ function toggleCompanionFields() {
         showElement(companionSection);
     } else {
         hideElement(companionSection);
+        clearFieldError(companionFullName);
+        clearFieldError(companionPhone);
+        clearFieldError(companionCpf);
     }
 
     companionFullName.required = shouldShow;
@@ -446,25 +452,172 @@ function validateForm() {
     return true;
 }
 
+function clearFieldError(field) {
+    field.classList.remove("input-error");
+    field.removeAttribute("aria-invalid");
+    const key = field.id || field.name || "generic";
+    const errorId = `error-${key}`;
+    const errorElement = document.querySelector(`#${errorId}`);
+    if (errorElement) {
+        errorElement.remove();
+    }
+}
+
+function validateFieldRealtime(field) {
+    if (field === fullName) {
+        if (isValidFullName(field.value)) {
+            clearFieldError(field);
+        } else if (field.value.trim().length > 0) {
+            setFieldError(field, "Informe nome e sobrenome.");
+        } else {
+            clearFieldError(field);
+        }
+        if (hasCompanion.value === "sim") {
+            validateFieldRealtime(companionFullName);
+        }
+    } else if (field === cpf) {
+        if (isValidCpf(field.value)) {
+            clearFieldError(field);
+            if (hasCompanion.value === "sim") {
+                validateFieldRealtime(companionCpf);
+            }
+        } else if (onlyDigits(field.value).length > 0) {
+            setFieldError(field, "CPF inválido.");
+        } else {
+            clearFieldError(field);
+        }
+    } else if (field === cnpj) {
+        if (isValidCnpj(field.value)) {
+            clearFieldError(field);
+        } else if (onlyDigits(field.value).length > 0) {
+            setFieldError(field, "CNPJ inválido.");
+        } else {
+            clearFieldError(field);
+        }
+    } else if (field === companyName) {
+        if (isValidCompanyName(field.value)) {
+            clearFieldError(field);
+        } else if (field.value.trim().length > 0) {
+            setFieldError(field, "Informe o nome da empresa.");
+        } else {
+            clearFieldError(field);
+        }
+    } else if (field === phone) {
+        if (isValidPhone(field.value)) {
+            clearFieldError(field);
+            validateCompanionPhone();
+        } else if (onlyDigits(field.value).length > 0) {
+            setFieldError(field, "Celular inválido. Use um número com DDD e 9 dígitos.");
+        } else {
+            clearFieldError(field);
+        }
+    } else if (field === companionFullName) {
+        if (companionFullName.value.trim().length === 0) {
+            clearFieldError(field);
+        } else {
+            if (!isValidFullName(field.value)) {
+                setFieldError(field, "Informe nome e sobrenome do acompanhante.");
+            } else if (normalizeText(field.value) === normalizeText(fullName.value)) {
+                setFieldError(field, "Nome do acompanhante não pode ser igual ao nome principal.");
+            } else {
+                clearFieldError(field);
+            }
+        }
+    } else if (field === companionPhone) {
+        validateCompanionPhone();
+    } else if (field === companionCpf) {
+        if (companionCpf.value.trim().length === 0) {
+            clearFieldError(field);
+        } else {
+            if (!isValidCpf(field.value)) {
+                setFieldError(field, "CPF do acompanhante inválido.");
+            } else if (personType.value === "PF" && onlyDigits(field.value) === onlyDigits(cpf.value)) {
+                setFieldError(field, "CPF do acompanhante não pode ser igual ao CPF principal.");
+            } else {
+                clearFieldError(field);
+            }
+        }
+    }
+}
+
+function validateCompanionPhone() {
+    if (hasCompanion.value !== "sim") {
+        clearFieldError(companionPhone);
+        return;
+    }
+
+    if (companionPhone.value.trim().length === 0) {
+        clearFieldError(companionPhone);
+    } else {
+        if (!isValidPhone(companionPhone.value)) {
+            setFieldError(companionPhone, "Celular do acompanhante inválido.");
+        } else if (onlyDigits(companionPhone.value) === onlyDigits(phone.value)) {
+            setFieldError(companionPhone, "Celular do acompanhante não pode ser igual ao celular principal.");
+        } else {
+            clearFieldError(companionPhone);
+        }
+    }
+}
+
 function setupInputMasks() {
     cpf.addEventListener("input", () => {
         cpf.value = formatCpf(cpf.value);
+        validateFieldRealtime(cpf);
+    });
+
+    cpf.addEventListener("blur", () => {
+        validateFieldRealtime(cpf);
     });
 
     cnpj.addEventListener("input", () => {
         cnpj.value = formatCnpj(cnpj.value);
+        validateFieldRealtime(cnpj);
+    });
+
+    cnpj.addEventListener("blur", () => {
+        validateFieldRealtime(cnpj);
     });
 
     phone.addEventListener("input", () => {
         phone.value = formatPhone(phone.value);
+        validateFieldRealtime(phone);
+    });
+
+    phone.addEventListener("blur", () => {
+        validateFieldRealtime(phone);
     });
 
     companionCpf.addEventListener("input", () => {
         companionCpf.value = formatCpf(companionCpf.value);
+        validateFieldRealtime(companionCpf);
+    });
+
+    companionCpf.addEventListener("blur", () => {
+        validateFieldRealtime(companionCpf);
     });
 
     companionPhone.addEventListener("input", () => {
         companionPhone.value = formatPhone(companionPhone.value);
+        validateFieldRealtime(companionPhone);
+    });
+
+    companionPhone.addEventListener("blur", () => {
+        validateFieldRealtime(companionPhone);
+    });
+
+    fullName.addEventListener("blur", () => {
+        validateFieldRealtime(fullName);
+        if (hasCompanion.value === "sim") {
+            validateFieldRealtime(companionFullName);
+        }
+    });
+
+    companyName.addEventListener("blur", () => {
+        validateFieldRealtime(companyName);
+    });
+
+    companionFullName.addEventListener("blur", () => {
+        validateFieldRealtime(companionFullName);
     });
 }
 
@@ -689,14 +842,52 @@ setupTermsDialog();
 setupSuccessDialog();
 updateProgressiveFlow();
 
-fullName.addEventListener("input", updateProgressiveFlow);
+fullName.addEventListener("input", () => {
+    updateProgressiveFlow();
+    validateFieldRealtime(fullName);
+});
+
+fullName.addEventListener("blur", () => {
+    validateFieldRealtime(fullName);
+});
+
 personType.addEventListener("change", updateProgressiveFlow);
+
 cpf.addEventListener("input", updateProgressiveFlow);
+cpf.addEventListener("blur", () => {
+    validateFieldRealtime(cpf);
+});
+
 cnpj.addEventListener("input", updateProgressiveFlow);
+cnpj.addEventListener("blur", () => {
+    validateFieldRealtime(cnpj);
+});
+
 companyName.addEventListener("input", updateProgressiveFlow);
+
 phone.addEventListener("input", updateProgressiveFlow);
-hasCompanion.addEventListener("change", updateProgressiveFlow);
+phone.addEventListener("blur", () => {
+    validateFieldRealtime(phone);
+});
+
+hasCompanion.addEventListener("change", () => {
+    updateProgressiveFlow();
+    toggleCompanionFields();
+});
+
 companionFullName.addEventListener("input", updateProgressiveFlow);
+companionFullName.addEventListener("blur", () => {
+    validateFieldRealtime(companionFullName);
+});
+
 companionPhone.addEventListener("input", updateProgressiveFlow);
+companionPhone.addEventListener("blur", () => {
+    validateFieldRealtime(companionPhone);
+});
+
 companionCpf.addEventListener("input", updateProgressiveFlow);
+companionCpf.addEventListener("blur", () => {
+    validateFieldRealtime(companionCpf);
+});
+
 form.addEventListener("submit", handleSubmit);
