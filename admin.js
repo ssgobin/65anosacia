@@ -26,6 +26,7 @@ const firebaseConfig = {
 };
 
 const totalCount = document.getElementById("totalCount");
+const totalGuestsCount = document.getElementById("totalGuestsCount");
 const checkedInCount = document.getElementById("checkedInCount");
 const pendingCount = document.getElementById("pendingCount");
 const searchInput = document.getElementById("searchInput");
@@ -35,6 +36,7 @@ const adminEmailBadge = document.getElementById("adminEmailBadge");
 const logoutButton = document.getElementById("logoutButton");
 const checkinDialog = document.getElementById("checkinDialog");
 const checkinDialogConfirm = document.getElementById("checkinDialogConfirm");
+const checkinDialogWithoutCompanion = document.getElementById("checkinDialogWithoutCompanion");
 const checkinDialogCancel = document.getElementById("checkinDialogCancel");
 const checkinDialogMessage = document.getElementById("checkinDialogMessage");
 const detailsDialog = document.getElementById("detailsDialog");
@@ -154,10 +156,12 @@ function updateStats(guests) {
             return total;
         }
 
-        return total + 1 + (guest.hasCompanion && guest.companion ? 1 : 0);
+        const companionCame = guest.hasCompanion && guest.companion && guest.companionCheckedIn !== false;
+        return total + 1 + (companionCame ? 1 : 0);
     }, 0);
 
     totalCount.textContent = String(totalPeople);
+    totalGuestsCount.textContent = String(guests.length);
     checkedInCount.textContent = String(checkedPeople);
     pendingCount.textContent = String(totalPeople - checkedPeople);
 }
@@ -224,10 +228,16 @@ function renderGuests(guests) {
             const documentLabel = guest.personType === "PF" ? "CPF" : "CNPJ";
             const documentValue =
                 guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj);
-            const companionText =
-                guest.hasCompanion && guest.companion
-                    ? `${escapeHtml(guest.companion.fullName || "Acompanhante")} | ${formatPhone(guest.companion.phone)} | CPF ${formatCpf(guest.companion.cpf)}`
-                    : "Sem acompanhante";
+            const hasCompanion = !!(guest.hasCompanion && guest.companion);
+            const companionInfo = hasCompanion
+                ? `${escapeHtml(guest.companion.fullName || "Acompanhante")} | ${formatPhone(guest.companion.phone)} | CPF ${formatCpf(guest.companion.cpf)}`
+                : "Sem acompanhante";
+
+            const companionStatusBadge = hasCompanion && guest.checkedIn
+                ? (guest.companionCheckedIn === false
+                    ? ' <span class="companion-absent">— acompanhante não veio</span>'
+                    : ' <span class="companion-present">— acompanhante presente</span>')
+                : "";
 
             return `
         <article class="guest-card">
@@ -254,7 +264,7 @@ function renderGuests(guests) {
           </div>
 
           <div class="companion-note">
-            <strong>Acompanhante:</strong> ${companionText}
+            <strong>Acompanhante:</strong> ${companionInfo}${companionStatusBadge}
           </div>
 
                     <div class="guest-actions">
@@ -272,6 +282,7 @@ function renderGuests(guests) {
                             data-action="checkin"
                             data-id="${guest.id}"
                             data-checked="${guest.checkedIn ? "1" : "0"}"
+                            data-has-companion="${hasCompanion ? "1" : "0"}"
                             type="button"
                         >
                             ${guest.checkedIn ? "Desfazer check-in" : "Confirmar check-in"}
@@ -306,7 +317,7 @@ function applyFilterAndRender() {
     renderGuests(filtered);
 }
 
-async function toggleCheckIn(guestId, currentChecked) {
+async function toggleCheckIn(guestId, currentChecked, companionCame = true) {
     if (!db) {
         setFeedback("Firebase não configurado para administração.");
         return;
@@ -317,6 +328,7 @@ async function toggleCheckIn(guestId, currentChecked) {
         await updateDoc(reference, {
             checkedIn: !currentChecked,
             checkedInAt: !currentChecked ? serverTimestamp() : null,
+            companionCheckedIn: !currentChecked ? companionCame : false,
             updatedAt: serverTimestamp(),
         });
 
@@ -327,17 +339,24 @@ async function toggleCheckIn(guestId, currentChecked) {
     }
 }
 
-function openCheckinDialog(guestId, currentChecked, guestName) {
+function openCheckinDialog(guestId, currentChecked, guestName, hasCompanion) {
     pendingCheckin = { guestId, currentChecked };
 
     if (currentChecked) {
         checkinDialogMessage.textContent = `Deseja remover o check-in de ${guestName}?`;
         checkinDialogConfirm.textContent = "Sim, remover check-in";
         checkinDialogConfirm.className = "secondary-button";
+        checkinDialogWithoutCompanion.hidden = true;
+    } else if (hasCompanion) {
+        checkinDialogMessage.textContent = `O acompanhante de ${guestName} veio ao evento?`;
+        checkinDialogConfirm.textContent = "Chegou com acompanhante";
+        checkinDialogConfirm.className = "primary-button";
+        checkinDialogWithoutCompanion.hidden = false;
     } else {
         checkinDialogMessage.textContent = `Confirmar chegada de ${guestName}?`;
         checkinDialogConfirm.textContent = "Sim, confirmar chegada";
         checkinDialogConfirm.className = "primary-button";
+        checkinDialogWithoutCompanion.hidden = true;
     }
 
     if (typeof checkinDialog.showModal === "function") {
@@ -386,10 +405,11 @@ function setupInteractions() {
         }
 
         const currentChecked = button.dataset.checked === "1";
+        const hasCompanion = button.dataset.hasCompanion === "1";
 
         const card = button.closest(".guest-card");
         const guestName = card ? card.querySelector(".guest-name")?.textContent.trim() : "este convidado";
-        openCheckinDialog(guestId, currentChecked, guestName || "este convidado");
+        openCheckinDialog(guestId, currentChecked, guestName || "este convidado", hasCompanion);
     });
 
     checkinDialogConfirm.addEventListener("click", async () => {
@@ -399,7 +419,17 @@ function setupInteractions() {
 
         const { guestId, currentChecked } = pendingCheckin;
         closeCheckinDialog();
-        await toggleCheckIn(guestId, currentChecked);
+        await toggleCheckIn(guestId, currentChecked, true);
+    });
+
+    checkinDialogWithoutCompanion.addEventListener("click", async () => {
+        if (!pendingCheckin) {
+            return;
+        }
+
+        const { guestId, currentChecked } = pendingCheckin;
+        closeCheckinDialog();
+        await toggleCheckIn(guestId, currentChecked, false);
     });
 
     checkinDialogCancel.addEventListener("click", () => {
