@@ -144,10 +144,22 @@ function escapeHtml(value) {
 }
 
 function updateStats(guests) {
-    const checkedCount = guests.filter((guest) => guest.checkedIn).length;
-    totalCount.textContent = String(guests.length);
-    checkedInCount.textContent = String(checkedCount);
-    pendingCount.textContent = String(guests.length - checkedCount);
+    const totalPeople = guests.reduce(
+        (total, guest) => total + 1 + (guest.hasCompanion && guest.companion ? 1 : 0),
+        0
+    );
+
+    const checkedPeople = guests.reduce((total, guest) => {
+        if (!guest.checkedIn) {
+            return total;
+        }
+
+        return total + 1 + (guest.hasCompanion && guest.companion ? 1 : 0);
+    }, 0);
+
+    totalCount.textContent = String(totalPeople);
+    checkedInCount.textContent = String(checkedPeople);
+    pendingCount.textContent = String(totalPeople - checkedPeople);
 }
 
 function getGuestById(guestId) {
