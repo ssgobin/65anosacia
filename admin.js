@@ -44,6 +44,7 @@ const detailsDialogClose = document.getElementById("detailsDialogClose");
 const detailsDialogOk = document.getElementById("detailsDialogOk");
 const detailsDialogSubtitle = document.getElementById("detailsDialogSubtitle");
 const detailsGrid = document.getElementById("detailsGrid");
+const exportButton = document.getElementById("exportButton");
 
 let pendingCheckin = null;
 
@@ -375,8 +376,201 @@ function closeCheckinDialog() {
     }
 }
 
+async function exportXlsx() {
+    if (!allGuests || allGuests.length === 0) {
+        setFeedback("Nenhum convidado para exportar.");
+        return;
+    }
+
+    const XLSXLib = window.ExcelJS;
+    if (!XLSXLib) {
+        setFeedback("Biblioteca de exportação não carregada. Recarregue a página.");
+        return;
+    }
+
+    const workbook = new XLSXLib.Workbook();
+    workbook.creator = "ACIA 65 Anos Admin";
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet("Convidados", {
+        views: [{ state: "frozen", ySplit: 10 }],
+        pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1 },
+    });
+
+    const TOTAL_COLS = 12;
+
+    sheet.columns = [
+        { key: "num",            width: 5  },
+        { key: "name",           width: 32 },
+        { key: "type",           width: 8  },
+        { key: "document",       width: 20 },
+        { key: "company",        width: 26 },
+        { key: "phone",          width: 18 },
+        { key: "companion",      width: 30 },
+        { key: "companionCpf",   width: 18 },
+        { key: "companionPhone", width: 18 },
+        { key: "status",         width: 20 },
+        { key: "checkinAt",      width: 22 },
+        { key: "confirmedAt",    width: 22 },
+    ];
+
+    // ── Linha 1: Título ──────────────────────────────────────────────────────
+    sheet.mergeCells(1, 1, 1, TOTAL_COLS);
+    const titleCell = sheet.getCell(1, 1);
+    titleCell.value = "ACIA 65 Anos — Lista de Convidados";
+    titleCell.font = { name: "Calibri", bold: true, size: 20, color: { argb: "FF1E3A8A" } };
+    titleCell.alignment = { horizontal: "center", vertical: "middle" };
+    titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1E3FF" } };
+    sheet.getRow(1).height = 42;
+
+    // ── Linha 2: Data de exportação ──────────────────────────────────────────
+    sheet.mergeCells(2, 1, 2, TOTAL_COLS);
+    const dateCell = sheet.getCell(2, 1);
+    dateCell.value = `Exportado em: ${new Date().toLocaleString("pt-BR")}`;
+    dateCell.font = { name: "Calibri", size: 10, italic: true, color: { argb: "FF64748B" } };
+    dateCell.alignment = { horizontal: "center", vertical: "middle" };
+    dateCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1E3FF" } };
+    sheet.getRow(2).height = 18;
+
+    // ── Linha 3: Espaçador ───────────────────────────────────────────────────
+    sheet.getRow(3).height = 6;
+
+    // ── Linha 4: Cabeçalho do resumo ─────────────────────────────────────────
+    sheet.mergeCells(4, 1, 4, TOTAL_COLS);
+    const statsHeader = sheet.getCell(4, 1);
+    statsHeader.value = "RESUMO DO EVENTO";
+    statsHeader.font = { name: "Calibri", bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+    statsHeader.alignment = { horizontal: "center", vertical: "middle" };
+    statsHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1D4ED8" } };
+    sheet.getRow(4).height = 22;
+
+    // ── Linhas 5-8: Dados do resumo ──────────────────────────────────────────
+    const totalPeople = allGuests.reduce(
+        (acc, g) => acc + 1 + (g.hasCompanion && g.companion ? 1 : 0), 0
+    );
+    const checkedPeople = allGuests.reduce((acc, g) => {
+        if (!g.checkedIn) return acc;
+        const cpCame = g.hasCompanion && g.companion && g.companionCheckedIn !== false;
+        return acc + 1 + (cpCame ? 1 : 0);
+    }, 0);
+
+    const stats = [
+        ["Total de Pessoas (com acompanhantes)", totalPeople],
+        ["Total de Convidados cadastrados",       allGuests.length],
+        ["Check-in Realizado",                    checkedPeople],
+        ["Aguardando Chegada",                    totalPeople - checkedPeople],
+    ];
+
+    stats.forEach(([label, value], i) => {
+        const rowNum = 5 + i;
+        sheet.getRow(rowNum).height = 20;
+
+        sheet.mergeCells(rowNum, 1, rowNum, 9);
+        const lCell = sheet.getCell(rowNum, 1);
+        lCell.value = label;
+        lCell.font = { name: "Calibri", size: 11 };
+        lCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F6FF" } };
+        lCell.alignment = { vertical: "middle", indent: 1 };
+        lCell.border = { bottom: { style: "thin", color: { argb: "FFCBD5E1" } } };
+
+        sheet.mergeCells(rowNum, 10, rowNum, TOTAL_COLS);
+        const vCell = sheet.getCell(rowNum, 10);
+        vCell.value = value;
+        vCell.font = { name: "Calibri", bold: true, size: 14, color: { argb: "FF1D4ED8" } };
+        vCell.alignment = { horizontal: "center", vertical: "middle" };
+        vCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F6FF" } };
+        vCell.border = { bottom: { style: "thin", color: { argb: "FFCBD5E1" } } };
+    });
+
+    // ── Linha 9: Espaçador ───────────────────────────────────────────────────
+    sheet.getRow(9).height = 6;
+
+    // ── Linha 10: Cabeçalhos das colunas ─────────────────────────────────────
+    const HEADER_LABELS = [
+        "#", "Nome Completo", "Tipo", "Documento", "Empresa",
+        "WhatsApp", "Acompanhante", "CPF Acompanhante", "WhatsApp Acomp.",
+        "Status", "Check-in em", "Confirmado em",
+    ];
+
+    const headerRow = sheet.getRow(10);
+    headerRow.height = 26;
+    HEADER_LABELS.forEach((label, idx) => {
+        const cell = headerRow.getCell(idx + 1);
+        cell.value = label;
+        cell.font = { name: "Calibri", bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1D4ED8" } };
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        cell.border = {
+            top:    { style: "thin",   color: { argb: "FF1E40AF" } },
+            bottom: { style: "medium", color: { argb: "FF1E40AF" } },
+            left:   { style: "thin",   color: { argb: "FF1E40AF" } },
+            right:  { style: "thin",   color: { argb: "FF1E40AF" } },
+        };
+    });
+
+    // ── Linhas de dados ───────────────────────────────────────────────────────
+    allGuests.forEach((guest, i) => {
+        const isChecked    = !!guest.checkedIn;
+        const hasCp        = !!(guest.hasCompanion && guest.companion);
+        const docValue     = guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj);
+        const bgColor      = isChecked ? "FFECFDF5" : "FFFEFCE8";
+        const statusColor  = isChecked ? "FF166534" : "FFB45309";
+        const statusText   = isChecked ? "✔ Chegou" : "⏳ Aguardando";
+
+        const dataRow = sheet.addRow({
+            num:             i + 1,
+            name:            guest.fullName || "-",
+            type:            guest.personType || "-",
+            document:        docValue,
+            company:         guest.personType === "PJ" ? (guest.companyName || "-") : "",
+            phone:           formatPhone(guest.phone),
+            companion:       hasCp ? (guest.companion.fullName || "Acompanhante") : "-",
+            companionCpf:    hasCp ? formatCpf(guest.companion.cpf) : "-",
+            companionPhone:  hasCp ? formatPhone(guest.companion.phone) : "-",
+            status:          statusText,
+            checkinAt:       guest.checkedInAt ? formatDateTime(guest.checkedInAt) : "-",
+            confirmedAt:     guest.createdAt   ? formatDateTime(guest.createdAt)   : "-",
+        });
+
+        dataRow.height = 18;
+        dataRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bgColor } };
+            cell.font = { name: "Calibri", size: 10 };
+            cell.alignment = { vertical: "middle" };
+            cell.border = {
+                bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+                right:  { style: "thin", color: { argb: "FFE5E7EB" } },
+            };
+            if ([1, 3, 10, 11, 12].includes(colNum)) {
+                cell.alignment = { horizontal: "center", vertical: "middle" };
+            }
+            if (colNum === 10) {
+                cell.font = { name: "Calibri", size: 10, bold: true, color: { argb: statusColor } };
+            }
+        });
+    });
+
+    // ── Gerar e baixar o arquivo ──────────────────────────────────────────────
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob   = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url    = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href     = url;
+    anchor.download = `convidados_acia65_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+
+    setFeedback("✅ Planilha exportada com sucesso!");
+    setTimeout(() => setFeedback(""), 3000);
+}
+
 function setupInteractions() {
     searchInput.addEventListener("input", applyFilterAndRender);
+    exportButton.addEventListener("click", exportXlsx);
 
     guestList.addEventListener("click", (event) => {
         const target = event.target;
