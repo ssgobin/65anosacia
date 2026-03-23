@@ -15,7 +15,7 @@ Pagina de confirmacao com:
 1. Crie um projeto no Firebase (ou use um existente).
 2. Ative o Firestore Database.
 3. No console do Firebase, pegue as credenciais Web App.
-4. Abra o arquivo app.js e preencha o objeto firebaseConfig:
+4. Abra o arquivo `assets/js/app.js` e preencha o objeto firebaseConfig:
 
 ```js
 const firebaseConfig = {
@@ -32,6 +32,14 @@ const firebaseConfig = {
 
 Opcao A: abrir o index.html direto no navegador.
 Opcao B (recomendado): usar uma extensao como Live Server no VS Code.
+
+## Estrutura de Pastas
+
+- `index.html` (formulario publico)
+- `assets/css/` (estilos)
+- `assets/js/` (scripts)
+- `pages/admin/` (login, painel admin, painel TI e gestao de cargos)
+- `img/` (imagens)
 
 ## 3) Colecao no Firestore
 
@@ -71,7 +79,7 @@ As configurações de bloqueio são armazenadas no Firestore no documento `confi
 Quando o formulário está bloqueado, exibe:
 > O tempo de confirmação acabou :( A confirmação de presença foi encerrada. Caso tenha alguma dúvida, entre em contato com: 19 99246-2193
 
-## 6) Página de Administração TI (adm_ti.html) - TOTALMENTE CONFIGURÁVEL
+## 6) Pagina de Administracao TI (pages/admin/adm_ti.html) - TOTALMENTE CONFIGURAVEL
 
 ### 🎛️ Tudo é Configurável!
 
@@ -163,7 +171,7 @@ Se nenhuma configuração for salva, o sistema usa estes valores:
 
 ### Acesso
 
-1. Clique em "⚙️ Configurações do Sistema" no painel principal (admin.html)
+1. Clique em "⚙ Configuracoes do Sistema" no painel principal (pages/admin/admin.html)
 2. Faça login com uma conta de administrador (padrão: admin@acia.com.br)
 3. Edite qualquer configuração nas abas
 4. Clique em "Salvar" na aba correspondente
@@ -172,7 +180,7 @@ Se nenhuma configuração for salva, o sistema usa estes valores:
 ### Fluxo de Configuração
 
 ```
-Usuário faz login → Vai para adm_ti → Edita configurações → Clica Salvar
+Usuario faz login -> Vai para adm_ti -> Edita configuracoes -> Clica Salvar
                                               ↓
                                     Firestore recebe dados
                                               ↓
@@ -184,9 +192,22 @@ Usuário faz login → Vai para adm_ti → Edita configurações → Clica Salva
 ### Exemplo de Uso
 
 Para mudar a data do evento:
-1. Vá para **adm_ti.html** → Aba **📅 Evento**
+1. Va para **pages/admin/adm_ti.html** -> Aba **Evento**
 2. Altere "Data do Evento" para a nova data
 3. Clique "Salvar Evento"
 4. Pronto! A página de confirmação (index.html) já mostra a nova data
+
+## 7) Gestao de Cargos (pages/admin/cargos.html)
+
+- Lista todos os confirmados.
+- Cada confirmado possui o botao "Aplicar cargo" com modal de selecao.
+- Cargos disponiveis:
+  - Autoridades (dourado)
+  - Homenageados (verde citrico)
+  - Ex-presidentes (vermelho)
+  - Patrocinadores (lilas)
+  - Diretoria (azul-marinho)
+- Botao "Cadastrar novo" com os mesmos campos do formulario original e campo extra de cargo.
+- O painel principal de administracao mostra contagem por cargo e badge de cargo ao lado do nome.
 
 

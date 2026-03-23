@@ -10,6 +10,11 @@
     --success: #166534;
     --warning: #92400e;
     --danger: #b91c1c;
+    --cargo-autoridades: #d4af37;
+    --cargo-homenageados: #84cc16;
+    --cargo-expresidentes: #b91c1c;
+    --cargo-patrocinadores: #a855f7;
+    --cargo-diretoria: #1e3a8a;
 }
 
 * {
@@ -111,6 +116,8 @@ body {
 
 .back-link {
     display: inline-flex;
+    align-items: center;
+    gap: 6px;
     color: var(--accent-strong);
     text-decoration: none;
     font-weight: 600;
@@ -254,6 +261,41 @@ body {
     margin: 0;
     font-size: 1.02rem;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cargo-pill {
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #334155;
+    background: #e2e8f0;
+    white-space: nowrap;
+}
+
+.cargo-pill.cargo-autoridades {
+    background: var(--cargo-autoridades);
+    color: #3b2f10;
+}
+
+.cargo-pill.cargo-homenageados {
+    background: var(--cargo-homenageados);
+    color: #1f2a09;
+}
+
+.cargo-pill.cargo-ex_presidentes {
+    background: var(--cargo-expresidentes);
+}
+
+.cargo-pill.cargo-patrocinadores {
+    background: var(--cargo-patrocinadores);
+}
+
+.cargo-pill.cargo-diretoria {
+    background: var(--cargo-diretoria);
 }
 
 .status-pill {
@@ -417,6 +459,10 @@ body {
     line-height: 1;
 }
 
+.checkin-dialog-icon i {
+    color: #16a34a;
+}
+
 .checkin-dialog h3 {
     margin: 0 0 8px;
     font-family: "Montserrat", sans-serif;
@@ -573,4 +619,71 @@ body {
     .details-actions .primary-button {
         width: 100%;
     }
+}
+
+.stat-box-cargo p {
+    color: #0f172a;
+}
+
+.stat-box-cargo {
+    display: grid;
+    gap: 8px;
+}
+
+.cargo-checkin-line {
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.cargo-checkin-line strong {
+    color: #0f172a;
+    font-size: 0.9rem;
+}
+
+.cargo-card-button {
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #eff6ff;
+    cursor: pointer;
+}
+
+.cargo-card-button:hover {
+    background: #dbeafe;
+}
+
+.cargo-guests-list {
+    display: grid;
+    gap: 8px;
+}
+
+.cargo-guest-item {
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 10px;
+    display: grid;
+    gap: 3px;
+}
+
+.cargo-guest-item strong {
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.cargo-guest-item span {
+    font-size: 0.86rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.cargo-pill.cargo-convidado {
+    background: linear-gradient(145deg, #d9dee7, #b8c0cc);
+    color: #1f2937;
+    border: 1px solid #aab4c3;
 }

@@ -29,6 +29,17 @@ const totalCount = document.getElementById("totalCount");
 const totalGuestsCount = document.getElementById("totalGuestsCount");
 const checkedInCount = document.getElementById("checkedInCount");
 const pendingCount = document.getElementById("pendingCount");
+const cargoAutoridadesCount = document.getElementById("cargoAutoridadesCount");
+const cargoHomenageadosCount = document.getElementById("cargoHomenageadosCount");
+const cargoExPresidentesCount = document.getElementById("cargoExPresidentesCount");
+const cargoPatrocinadoresCount = document.getElementById("cargoPatrocinadoresCount");
+const cargoDiretoriaCount = document.getElementById("cargoDiretoriaCount");
+const cargoAutoridadesCheckinCount = document.getElementById("cargoAutoridadesCheckinCount");
+const cargoHomenageadosCheckinCount = document.getElementById("cargoHomenageadosCheckinCount");
+const cargoExPresidentesCheckinCount = document.getElementById("cargoExPresidentesCheckinCount");
+const cargoPatrocinadoresCheckinCount = document.getElementById("cargoPatrocinadoresCheckinCount");
+const cargoDiretoriaCheckinCount = document.getElementById("cargoDiretoriaCheckinCount");
+const cargoStatsGrid = document.getElementById("cargoStatsGrid");
 const searchInput = document.getElementById("searchInput");
 const guestList = document.getElementById("guestList");
 const adminFeedback = document.getElementById("adminFeedback");
@@ -44,6 +55,12 @@ const detailsDialogClose = document.getElementById("detailsDialogClose");
 const detailsDialogOk = document.getElementById("detailsDialogOk");
 const detailsDialogSubtitle = document.getElementById("detailsDialogSubtitle");
 const detailsGrid = document.getElementById("detailsGrid");
+const cargoGuestsDialog = document.getElementById("cargoGuestsDialog");
+const cargoGuestsDialogTitle = document.getElementById("cargoGuestsDialogTitle");
+const cargoGuestsDialogSubtitle = document.getElementById("cargoGuestsDialogSubtitle");
+const cargoGuestsDialogList = document.getElementById("cargoGuestsDialogList");
+const cargoGuestsDialogClose = document.getElementById("cargoGuestsDialogClose");
+const cargoGuestsDialogOk = document.getElementById("cargoGuestsDialogOk");
 const exportButton = document.getElementById("exportButton");
 
 let pendingCheckin = null;
@@ -51,6 +68,15 @@ let pendingCheckin = null;
 const ALLOWED_ADMIN_EMAILS = [
     "admin@acia.com.br",
 ];
+
+const CARGO_META = {
+    convidado: { label: "Convidado", className: "cargo-convidado" },
+    autoridades: { label: "Autoridades", className: "cargo-autoridades" },
+    homenageados: { label: "Homenageados", className: "cargo-homenageados" },
+    ex_presidentes: { label: "Ex-presidentes", className: "cargo-ex_presidentes" },
+    patrocinadores: { label: "Patrocinadores", className: "cargo-patrocinadores" },
+    diretoria: { label: "Diretoria", className: "cargo-diretoria" },
+};
 
 const hasFirebaseConfig = Object.values(firebaseConfig).every(
     (value) => typeof value === "string" && !value.startsWith("COLOQUE_")
@@ -165,6 +191,51 @@ function updateStats(guests) {
     totalGuestsCount.textContent = String(guests.length);
     checkedInCount.textContent = String(checkedPeople);
     pendingCount.textContent = String(totalPeople - checkedPeople);
+
+    const cargoCounts = guests.reduce((acc, guest) => {
+        const cargo = guest.cargo;
+        if (cargo && acc[cargo] !== undefined) {
+            acc[cargo] += 1;
+        }
+        return acc;
+    }, {
+        autoridades: 0,
+        homenageados: 0,
+        ex_presidentes: 0,
+        patrocinadores: 0,
+        diretoria: 0,
+    });
+
+    const cargoCheckinCounts = guests.reduce((acc, guest) => {
+        const cargo = guest.cargo;
+        if (cargo && acc[cargo] !== undefined && guest.checkedIn) {
+            acc[cargo] += 1;
+        }
+        return acc;
+    }, {
+        autoridades: 0,
+        homenageados: 0,
+        ex_presidentes: 0,
+        patrocinadores: 0,
+        diretoria: 0,
+    });
+
+    if (cargoAutoridadesCount) cargoAutoridadesCount.textContent = String(cargoCounts.autoridades);
+    if (cargoHomenageadosCount) cargoHomenageadosCount.textContent = String(cargoCounts.homenageados);
+    if (cargoExPresidentesCount) cargoExPresidentesCount.textContent = String(cargoCounts.ex_presidentes);
+    if (cargoPatrocinadoresCount) cargoPatrocinadoresCount.textContent = String(cargoCounts.patrocinadores);
+    if (cargoDiretoriaCount) cargoDiretoriaCount.textContent = String(cargoCounts.diretoria);
+    if (cargoAutoridadesCheckinCount) cargoAutoridadesCheckinCount.textContent = String(cargoCheckinCounts.autoridades);
+    if (cargoHomenageadosCheckinCount) cargoHomenageadosCheckinCount.textContent = String(cargoCheckinCounts.homenageados);
+    if (cargoExPresidentesCheckinCount) cargoExPresidentesCheckinCount.textContent = String(cargoCheckinCounts.ex_presidentes);
+    if (cargoPatrocinadoresCheckinCount) cargoPatrocinadoresCheckinCount.textContent = String(cargoCheckinCounts.patrocinadores);
+    if (cargoDiretoriaCheckinCount) cargoDiretoriaCheckinCount.textContent = String(cargoCheckinCounts.diretoria);
+}
+
+function cargoBadge(cargo) {
+    const meta = CARGO_META[cargo] || CARGO_META.convidado;
+
+    return `<span class="cargo-pill ${meta.className}">${meta.label}</span>`;
 }
 
 function getGuestById(guestId) {
@@ -192,6 +263,7 @@ function openDetailsDialog(guest) {
 
     detailsGrid.innerHTML = [
         detailsItem("Nome completo", guest.fullName || "-"),
+        detailsItem("Cargo", CARGO_META[guest.cargo]?.label || "Convidado"),
         detailsItem("Tipo", guest.personType || "-"),
         detailsItem(documentLabel, documentValue),
         detailsItem("Nome da empresa", companyValue),
@@ -215,6 +287,46 @@ function closeDetailsDialog() {
         detailsDialog.close();
     } else {
         detailsDialog.removeAttribute("open");
+    }
+}
+
+function openCargoGuestsDialog(cargoKey) {
+    const cargoMeta = CARGO_META[cargoKey];
+    if (!cargoMeta) {
+        return;
+    }
+
+    const guestsByCargo = allGuests.filter((guest) => guest.cargo === cargoKey);
+    const checkedGuestsByCargo = guestsByCargo.filter((guest) => guest.checkedIn);
+
+    cargoGuestsDialogTitle.textContent = `Confirmados: ${cargoMeta.label}`;
+    cargoGuestsDialogSubtitle.textContent = `${checkedGuestsByCargo.length} check-in(s) confirmado(s) neste cargo`;
+
+    if (checkedGuestsByCargo.length === 0) {
+        cargoGuestsDialogList.innerHTML = '<div class="empty-state">Nenhum check-in confirmado neste cargo até agora.</div>';
+    } else {
+        cargoGuestsDialogList.innerHTML = checkedGuestsByCargo
+            .map((guest) => `
+                <article class="cargo-guest-item">
+                    <strong>${escapeHtml(guest.fullName || "Sem nome")}</strong>
+                    <span>${escapeHtml(formatPhone(guest.phone))}</span>
+                </article>
+            `)
+            .join("");
+    }
+
+    if (typeof cargoGuestsDialog.showModal === "function") {
+        cargoGuestsDialog.showModal();
+    } else {
+        cargoGuestsDialog.setAttribute("open", "true");
+    }
+}
+
+function closeCargoGuestsDialog() {
+    if (typeof cargoGuestsDialog.close === "function") {
+        cargoGuestsDialog.close();
+    } else {
+        cargoGuestsDialog.removeAttribute("open");
     }
 }
 
@@ -243,7 +355,7 @@ function renderGuests(guests) {
             return `
         <article class="guest-card">
           <div class="guest-main">
-            <h3 class="guest-name">${escapeHtml(guest.fullName || "Sem nome")}</h3>
+                        <h3 class="guest-name">${escapeHtml(guest.fullName || "Sem nome")} ${cargoBadge(guest.cargo)}</h3>
             <span class="status-pill ${guest.checkedIn ? "checked" : "pending"}">
               ${guest.checkedIn ? "Chegou no evento" : "Aguardando check-in"}
             </span>
@@ -304,6 +416,7 @@ function applyFilterAndRender() {
             guest.fullName || "",
             guest.phone || "",
             docValue,
+            guest.cargo || "",
             guest.companion?.fullName || "",
             guest.companion?.phone || "",
             guest.companion?.cpf || "",
@@ -638,6 +751,28 @@ function setupInteractions() {
     detailsDialogOk.addEventListener("click", () => {
         closeDetailsDialog();
     });
+
+    cargoStatsGrid.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        const button = target.closest("button[data-action='view-cargo'][data-cargo]");
+        if (!button) {
+            return;
+        }
+
+        const cargoKey = button.dataset.cargo;
+        if (!cargoKey) {
+            return;
+        }
+
+        openCargoGuestsDialog(cargoKey);
+    });
+
+    cargoGuestsDialogClose.addEventListener("click", closeCargoGuestsDialog);
+    cargoGuestsDialogOk.addEventListener("click", closeCargoGuestsDialog);
 }
 
 function subscribeGuestList() {

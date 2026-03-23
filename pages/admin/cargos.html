@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Cargos | ACIA 65 Anos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/admin.css">
+    <link rel="stylesheet" href="../../assets/css/cargos.css">
+</head>
+
+<body>
+    <main class="admin-page">
+        <section class="admin-card">
+            <header class="admin-header">
+                <div class="brand">
+                    <img class="brand-logo" src="../../img/LOGO-ACIA_65_PRINCIPAL.png" alt="Logo oficial ACIA 65 anos">
+                </div>
+                <p class="kicker">Painel de Cargos</p>
+                <h1>Gestão de Cargos dos Confirmados</h1>
+                <p class="subtitle">Aplique cargos aos convidados e cadastre novos já com cargo definido.</p>
+                <div class="admin-top-actions">
+                    <span id="adminEmailBadge" class="admin-email">Administrador</span>
+                    <button id="logoutButton" class="logout-button" type="button">Sair</button>
+                </div>
+                <div class="admin-links">
+                    <a class="back-link" href="admin.html">Voltar para painel principal</a>
+                    <a class="back-link" href="adm_ti.html">Configurações do sistema</a>
+                    <button id="openCreateButton" class="export-button" type="button">Cadastrar novo</button>
+                </div>
+            </header>
+
+            <section class="filters">
+                <label for="searchInput">Buscar confirmado</label>
+                <input id="searchInput" type="search" placeholder="Digite nome, CPF/CNPJ ou telefone">
+            </section>
+
+            <section id="cargoFeedback" class="admin-feedback" aria-live="polite"></section>
+            <section id="confirmedList" class="guest-list" aria-label="Lista de confirmados"></section>
+        </section>
+    </main>
+
+    <dialog id="cargoDialog" class="checkin-dialog" aria-labelledby="cargoDialogTitle">
+        <article>
+            <h3 id="cargoDialogTitle">Aplicar cargo</h3>
+            <p id="cargoDialogSubtitle">Selecione o cargo para este confirmado.</p>
+            <div class="field-group modal-field">
+                <label for="cargoSelect">Cargo</label>
+                <select id="cargoSelect">
+                    <option value="">Selecione</option>
+                    <option value="autoridades">Autoridades</option>
+                    <option value="homenageados">Homenageados</option>
+                    <option value="ex_presidentes">Ex-presidentes</option>
+                    <option value="patrocinadores">Patrocinadores</option>
+                    <option value="diretoria">Diretoria</option>
+                </select>
+            </div>
+            <div class="dialog-actions">
+                <button id="saveCargoButton" class="primary-button" type="button">Salvar cargo</button>
+                <button id="removeCargoButton" class="secondary-button" type="button">Remover cargo</button>
+                <button id="cancelCargoButton" class="secondary-button" type="button">Cancelar</button>
+            </div>
+        </article>
+    </dialog>
+
+    <dialog id="createDialog" class="details-dialog" aria-labelledby="createDialogTitle">
+        <article>
+            <div class="details-head">
+                <h3 id="createDialogTitle">Cadastrar novo confirmado</h3>
+                <button id="createDialogClose" class="icon-close" type="button" aria-label="Fechar">×</button>
+            </div>
+            <p id="createDialogSubtitle" class="create-subtitle">Preencha os dados abaixo para cadastrar um convidado diretamente com cargo.</p>
+
+            <form id="createGuestForm" class="create-form" novalidate>
+                <section class="create-block">
+                    <h4>Dados principais</h4>
+                    <div class="field-group">
+                        <label for="newFullName">Nome completo</label>
+                        <input id="newFullName" type="text" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label for="newPersonType">Tipo de pessoa</label>
+                            <select id="newPersonType" required>
+                                <option value="">Selecione</option>
+                                <option value="PF">Pessoa Física (PF)</option>
+                                <option value="PJ">Pessoa Jurídica (PJ)</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label for="newCargo">Cargo</label>
+                            <select id="newCargo" required>
+                                <option value="">Selecione</option>
+                                <option value="autoridades">Autoridades</option>
+                                <option value="homenageados">Homenageados</option>
+                                <option value="ex_presidentes">Ex-presidentes</option>
+                                <option value="patrocinadores">Patrocinadores</option>
+                                <option value="diretoria">Diretoria</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field-group" id="newCpfGroup">
+                            <label for="newCpf">CPF</label>
+                            <input id="newCpf" type="text" maxlength="14" placeholder="000.000.000-00">
+                        </div>
+                        <div class="field-group hidden" id="newCnpjGroup">
+                            <label for="newCnpj">CNPJ</label>
+                            <input id="newCnpj" type="text" maxlength="18" placeholder="00.000.000/0000-00">
+                        </div>
+                    </div>
+
+                    <div class="field-group hidden" id="newCompanyGroup">
+                        <label for="newCompanyName">Nome da empresa</label>
+                        <input id="newCompanyName" type="text">
+                    </div>
+
+                    <div class="field-group">
+                        <label for="newPhone">Celular / WhatsApp</label>
+                        <input id="newPhone" type="text" maxlength="15" placeholder="(00) 00000-0000" required>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="newHasCompanion">Levará acompanhante?</label>
+                        <select id="newHasCompanion" required>
+                            <option value="nao">Não</option>
+                            <option value="sim">Sim</option>
+                        </select>
+                    </div>
+                </section>
+
+                <fieldset id="newCompanionSection" class="companion hidden" hidden aria-hidden="true">
+                    <legend>Dados do acompanhante</legend>
+                    <div class="field-group">
+                        <label for="newCompanionFullName">Nome completo do acompanhante</label>
+                        <input id="newCompanionFullName" type="text">
+                    </div>
+                    <div class="field-group">
+                        <label for="newCompanionPhone">Celular / WhatsApp do acompanhante</label>
+                        <input id="newCompanionPhone" type="text" maxlength="15" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="field-group">
+                        <label for="newCompanionCpf">CPF do acompanhante</label>
+                        <input id="newCompanionCpf" type="text" maxlength="14" placeholder="000.000.000-00">
+                    </div>
+                </fieldset>
+
+                <div id="createFeedback" class="admin-feedback" aria-live="polite"></div>
+
+                <div class="dialog-actions details-actions">
+                    <button id="createSaveButton" class="primary-button" type="submit">Salvar confirmado</button>
+                    <button id="createCancelButton" class="secondary-button" type="button">Cancelar</button>
+                </div>
+            </form>
+        </article>
+    </dialog>
+
+    <script type="module" src="../../assets/js/cargos.js"></script>
+</body>
+
+</html>

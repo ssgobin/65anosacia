@@ -157,10 +157,10 @@ async function loadCurrentConfig() {
         const now = new Date();
         const blockDateTime = new Date(blockDate.value + "T" + blockTime.value);
         if (now > blockDateTime) {
-            formStatus.textContent = "🔒 Bloqueado";
+            formStatus.textContent = "Bloqueado";
             formStatus.style.color = "#c0392b";
         } else {
-            formStatus.textContent = "✓ Ativo";
+            formStatus.textContent = "Ativo";
             formStatus.style.color = "#27ae60";
         }
     } catch (error) {
@@ -222,10 +222,10 @@ async function saveBlockConfig() {
         const now = new Date();
         const blockDateTime = new Date(blockDate.value + "T" + blockTime.value);
         if (now > blockDateTime) {
-            formStatus.textContent = "🔒 Bloqueado";
+            formStatus.textContent = "Bloqueado";
             formStatus.style.color = "#c0392b";
         } else {
-            formStatus.textContent = "✓ Ativo";
+            formStatus.textContent = "Ativo";
             formStatus.style.color = "#27ae60";
         }
     } catch (error) {
@@ -393,7 +393,7 @@ function setupAuthListener() {
 
             if (allowedEmails.includes(String(user.email || "").toLowerCase())) {
                 adminEmailBadge.textContent = user.email;
-                authStatus.textContent = "✓ Autenticado";
+                authStatus.textContent = "Autenticado";
                 authStatus.style.color = "#27ae60";
                 showLoginContainer(false);
                 setupTabNavigation();
@@ -408,7 +408,7 @@ function setupAuthListener() {
                 window.location.href = "admin-login.html";
             }
         } else {
-            authStatus.textContent = "✗ Não autenticado";
+            authStatus.textContent = "Não autenticado";
             authStatus.style.color = "#c0392b";
             showLoginContainer(true);
         }

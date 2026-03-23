@@ -9,8 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="adm_ti.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="../../assets/css/admin.css">
+    <link rel="stylesheet" href="../../assets/css/adm_ti.css">
 </head>
 
 <body>
@@ -18,7 +21,7 @@
         <section class="admin-card">
             <header class="admin-header">
                 <div class="brand">
-                    <img class="brand-logo" src="img/LOGO-ACIA_65_PRINCIPAL.png" alt="Logo oficial ACIA 65 anos">
+                    <img class="brand-logo" src="../../img/LOGO-ACIA_65_PRINCIPAL.png" alt="Logo oficial ACIA 65 anos">
                 </div>
                 <p class="kicker">Painel de Controle TI</p>
                 <h1>Administração do Sistema - ACIA 65 Anos</h1>
@@ -27,7 +30,10 @@
                     <span id="adminEmailBadge" class="admin-email">Administrador</span>
                     <button id="logoutButton" class="logout-button" type="button">Sair</button>
                 </div>
-                <a class="back-link" href="admin.html">Voltar para painel principal</a>
+                <div class="admin-links">
+                    <a class="back-link" href="admin.html">Voltar para painel principal</a>
+                    <a class="back-link" href="cargos.html">Ir para Gestão de Cargos</a>
+                </div>
             </header>
 
             <div id="loginContainer" class="login-container hidden">
@@ -40,11 +46,11 @@
 
             <div id="configContainer" class="config-container hidden">
                 <div class="tabs-header">
-                    <button class="tab-button active" data-tab="evento">📅 Evento</button>
-                    <button class="tab-button" data-tab="bloqueio">🔒 Bloqueio</button>
-                    <button class="tab-button" data-tab="contato">📞 Contato</button>
-                    <button class="tab-button" data-tab="admin">👤 Administração</button>
-                    <button class="tab-button" data-tab="mensagens">💬 Mensagens</button>
+                    <button class="tab-button active" data-tab="evento"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> Evento</button>
+                    <button class="tab-button" data-tab="bloqueio"><i class="fa-solid fa-lock" aria-hidden="true"></i> Bloqueio</button>
+                    <button class="tab-button" data-tab="contato"><i class="fa-solid fa-phone" aria-hidden="true"></i> Contato</button>
+                    <button class="tab-button" data-tab="admin"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Administração</button>
+                    <button class="tab-button" data-tab="mensagens"><i class="fa-solid fa-comments" aria-hidden="true"></i> Mensagens</button>
                 </div>
 
                 <!-- ABA: EVENTO -->
@@ -236,7 +242,7 @@
         </section>
     </main>
 
-    <script type="module" src="adm_ti.js"></script>
+    <script type="module" src="../../assets/js/adm_ti.js"></script>
 </body>
 
 </html>

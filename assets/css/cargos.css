@@ -1,0 +1,221 @@
+:root {
+    --cargo-autoridades: #d4af37;
+    --cargo-homenageados: #84cc16;
+    --cargo-expresidentes: #b91c1c;
+    --cargo-patrocinadores: #a855f7;
+    --cargo-diretoria: #1e3a8a;
+}
+
+.modal-field {
+    margin: 12px 0 16px;
+    text-align: left;
+}
+
+.modal-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.modal-field select,
+.create-form input,
+.create-form select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 11px 12px;
+    font: inherit;
+}
+
+.modal-field select:focus,
+.create-form input:focus,
+.create-form select:focus {
+    outline: none;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.14);
+}
+
+.create-form {
+    display: grid;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+#createDialog {
+    width: min(94vw, 820px);
+    max-height: 92vh;
+    overflow: hidden;
+}
+
+#createDialog article {
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 18px 18px 14px;
+}
+
+.create-subtitle {
+    margin: 8px 0 14px;
+    color: #475569;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+.create-block {
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 12px;
+}
+
+.create-block h4 {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    color: #1e3a8a;
+    font-weight: 800;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.create-form .field-group {
+    gap: 6px;
+}
+
+.create-form .field-group label {
+    font-weight: 700;
+}
+
+.create-form .companion {
+    margin-top: 2px;
+    border: 1px dashed #93c5fd;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.create-form .companion legend {
+    font-weight: 800;
+    color: #1e3a8a;
+    padding: 0 6px;
+}
+
+.create-form .details-actions {
+    justify-content: flex-end;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 12px;
+    margin-top: 2px;
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), #ffffff 45%);
+}
+
+.create-form .details-actions .primary-button {
+    min-width: 180px;
+}
+
+.cargo-pill {
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.cargo-pill.cargo-convidado {
+    background: linear-gradient(145deg, #d9dee7, #b8c0cc);
+    color: #1f2937;
+    border: 1px solid #aab4c3;
+}
+
+.cargo-pill.cargo-autoridades {
+    background: var(--cargo-autoridades);
+    color: #3b2f10;
+}
+
+.cargo-pill.cargo-homenageados {
+    background: var(--cargo-homenageados);
+    color: #1f2a09;
+}
+
+.cargo-pill.cargo-ex_presidentes {
+    background: var(--cargo-expresidentes);
+}
+
+.cargo-pill.cargo-patrocinadores {
+    background: var(--cargo-patrocinadores);
+}
+
+.cargo-pill.cargo-diretoria {
+    background: var(--cargo-diretoria);
+}
+
+.guest-main.with-cargo {
+    align-items: center;
+}
+
+.apply-cargo-button {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #eff6ff;
+    cursor: pointer;
+}
+
+.apply-cargo-button:hover {
+    background: #dbeafe;
+}
+
+.remove-cargo-button {
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 700;
+    color: #991b1b;
+    background: #fef2f2;
+    cursor: pointer;
+}
+
+.remove-cargo-button:hover {
+    background: #fee2e2;
+}
+
+.hidden {
+    display: none;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 700px) {
+    #createDialog {
+        width: min(96vw, 820px);
+    }
+
+    #createDialog article {
+        padding: 14px 12px 12px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .create-form .details-actions {
+        justify-content: stretch;
+    }
+
+    .create-form .details-actions .primary-button,
+    .create-form .details-actions .secondary-button {
+        width: 100%;
+    }
+}
