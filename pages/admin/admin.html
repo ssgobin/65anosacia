@@ -130,6 +130,98 @@
         </article>
     </dialog>
 
+    <dialog id="editGuestDialog" class="details-dialog" aria-labelledby="editGuestDialogTitle">
+        <article>
+            <div class="details-head">
+                <h3 id="editGuestDialogTitle">Editar confirmação</h3>
+                <button id="editGuestDialogClose" class="icon-close" type="button" aria-label="Fechar edição">×</button>
+            </div>
+            <p id="editGuestDialogSubtitle" class="details-subtitle">Atualize os dados do convidado</p>
+
+            <form id="editGuestForm" class="edit-guest-form" novalidate>
+                <div class="edit-grid">
+                    <label>
+                        Nome completo
+                        <input id="editFullName" type="text" required>
+                    </label>
+
+                    <label>
+                        Cargo
+                        <select id="editCargo">
+                            <option value="convidado">Convidado</option>
+                            <option value="autoridades">Autoridades</option>
+                            <option value="homenageados">Homenageados</option>
+                            <option value="ex_presidentes">Ex-presidentes</option>
+                            <option value="patrocinadores">Patrocinadores</option>
+                            <option value="diretoria">Diretoria</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Tipo de pessoa
+                        <select id="editPersonType" required>
+                            <option value="PF">Pessoa Física (CPF)</option>
+                            <option value="PJ">Pessoa Jurídica (CNPJ)</option>
+                        </select>
+                    </label>
+
+                    <label id="editCpfField">
+                        CPF
+                        <input id="editCpf" type="text" inputmode="numeric" maxlength="14">
+                    </label>
+
+                    <label id="editCnpjField">
+                        CNPJ
+                        <input id="editCnpj" type="text" inputmode="numeric" maxlength="18">
+                    </label>
+
+                    <label id="editCompanyField" class="edit-grid-full">
+                        Nome da empresa
+                        <input id="editCompanyName" type="text">
+                    </label>
+
+                    <label>
+                        WhatsApp
+                        <input id="editPhone" type="text" inputmode="numeric" maxlength="15" required>
+                    </label>
+
+                    <label>
+                        Levará acompanhante?
+                        <select id="editHasCompanion" required>
+                            <option value="nao">Não</option>
+                            <option value="sim">Sim</option>
+                        </select>
+                    </label>
+                </div>
+
+                <fieldset id="editCompanionSection" class="edit-companion-section">
+                    <legend>Dados do acompanhante</legend>
+                    <div class="edit-grid">
+                        <label>
+                            Nome completo
+                            <input id="editCompanionFullName" type="text">
+                        </label>
+                        <label>
+                            WhatsApp
+                            <input id="editCompanionPhone" type="text" inputmode="numeric" maxlength="15">
+                        </label>
+                        <label>
+                            CPF
+                            <input id="editCompanionCpf" type="text" inputmode="numeric" maxlength="14">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <p id="editGuestFeedback" class="edit-feedback" aria-live="polite"></p>
+
+                <div class="dialog-actions details-actions">
+                    <button id="editGuestCancel" class="secondary-button" type="button">Cancelar</button>
+                    <button id="editGuestSave" class="primary-button" type="submit">Salvar alterações</button>
+                </div>
+            </form>
+        </article>
+    </dialog>
+
     <dialog id="cargoGuestsDialog" class="details-dialog" aria-labelledby="cargoGuestsDialogTitle">
         <article>
             <div class="details-head">

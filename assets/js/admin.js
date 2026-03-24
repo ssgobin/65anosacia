@@ -62,8 +62,31 @@ const cargoGuestsDialogList = document.getElementById("cargoGuestsDialogList");
 const cargoGuestsDialogClose = document.getElementById("cargoGuestsDialogClose");
 const cargoGuestsDialogOk = document.getElementById("cargoGuestsDialogOk");
 const exportButton = document.getElementById("exportButton");
+const editGuestDialog = document.getElementById("editGuestDialog");
+const editGuestDialogClose = document.getElementById("editGuestDialogClose");
+const editGuestDialogSubtitle = document.getElementById("editGuestDialogSubtitle");
+const editGuestForm = document.getElementById("editGuestForm");
+const editFullName = document.getElementById("editFullName");
+const editCargo = document.getElementById("editCargo");
+const editPersonType = document.getElementById("editPersonType");
+const editCpfField = document.getElementById("editCpfField");
+const editCnpjField = document.getElementById("editCnpjField");
+const editCpf = document.getElementById("editCpf");
+const editCnpj = document.getElementById("editCnpj");
+const editCompanyField = document.getElementById("editCompanyField");
+const editCompanyName = document.getElementById("editCompanyName");
+const editPhone = document.getElementById("editPhone");
+const editHasCompanion = document.getElementById("editHasCompanion");
+const editCompanionSection = document.getElementById("editCompanionSection");
+const editCompanionFullName = document.getElementById("editCompanionFullName");
+const editCompanionPhone = document.getElementById("editCompanionPhone");
+const editCompanionCpf = document.getElementById("editCompanionCpf");
+const editGuestFeedback = document.getElementById("editGuestFeedback");
+const editGuestCancel = document.getElementById("editGuestCancel");
+const editGuestSave = document.getElementById("editGuestSave");
 
 let pendingCheckin = null;
+let pendingEditGuestId = null;
 
 const ALLOWED_ADMIN_EMAILS = [
     "admin@acia.com.br",
@@ -141,6 +164,110 @@ function formatPhone(phone) {
     }
 
     return "-";
+}
+
+function maskCpf(value) {
+    const digits = onlyDigits(value).slice(0, 11);
+    return digits
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function maskCnpj(value) {
+    const digits = onlyDigits(value).slice(0, 14);
+    return digits
+        .replace(/^(\d{2})(\d)/, "$1.$2")
+        .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+        .replace(/\.(\d{3})(\d)/, ".$1/$2")
+        .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function maskPhone(value) {
+    const digits = onlyDigits(value).slice(0, 11);
+    if (digits.length <= 10) {
+        return digits
+            .replace(/^(\d{2})(\d)/, "($1) $2")
+            .replace(/(\d{4})(\d)/, "$1-$2");
+    }
+
+    return digits
+        .replace(/^(\d{2})(\d)/, "($1) $2")
+        .replace(/(\d{5})(\d)/, "$1-$2");
+}
+
+function normalizeText(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function isValidPhone(phone) {
+    const digits = onlyDigits(phone);
+    return digits.length === 10 || digits.length === 11;
+}
+
+function isValidFullName(value) {
+    const cleaned = String(value || "").trim();
+    return cleaned.length >= 5 && cleaned.split(/\s+/).length >= 2;
+}
+
+function isValidCpf(value) {
+    const digits = onlyDigits(value);
+
+    if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+        return false;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < 9; i += 1) {
+        sum += Number(digits[i]) * (10 - i);
+    }
+
+    let firstDigit = (sum * 10) % 11;
+    if (firstDigit === 10) {
+        firstDigit = 0;
+    }
+
+    if (firstDigit !== Number(digits[9])) {
+        return false;
+    }
+
+    sum = 0;
+    for (let i = 0; i < 10; i += 1) {
+        sum += Number(digits[i]) * (11 - i);
+    }
+
+    let secondDigit = (sum * 10) % 11;
+    if (secondDigit === 10) {
+        secondDigit = 0;
+    }
+
+    return secondDigit === Number(digits[10]);
+}
+
+function isValidCnpj(value) {
+    const digits = onlyDigits(value);
+
+    if (digits.length !== 14 || /^(\d)\1{13}$/.test(digits)) {
+        return false;
+    }
+
+    const calcDigit = (base, multipliers) => {
+        const sum = base
+            .split("")
+            .reduce((acc, char, index) => acc + Number(char) * multipliers[index], 0);
+        const rest = sum % 11;
+        return rest < 2 ? 0 : 11 - rest;
+    };
+
+    const base = digits.slice(0, 12);
+    const firstDigit = calcDigit(base, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    const secondDigit = calcDigit(base + firstDigit, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+
+    return digits.endsWith(`${firstDigit}${secondDigit}`);
 }
 
 function formatDateTime(value) {
@@ -290,6 +417,241 @@ function closeDetailsDialog() {
     }
 }
 
+function setEditFeedback(message = "", isSuccess = false) {
+    editGuestFeedback.textContent = message;
+    editGuestFeedback.classList.toggle("success", isSuccess);
+}
+
+function toggleEditDocumentFields() {
+    const isPF = editPersonType.value === "PF";
+
+    editCpfField.hidden = !isPF;
+    editCnpjField.hidden = isPF;
+    editCompanyField.hidden = isPF;
+
+    editCpf.required = isPF;
+    editCnpj.required = !isPF;
+    editCompanyName.required = !isPF;
+
+    if (isPF) {
+        editCnpj.value = "";
+        editCompanyName.value = "";
+    } else {
+        editCpf.value = "";
+    }
+}
+
+function toggleEditCompanionFields() {
+    const hasCompanion = editHasCompanion.value === "sim";
+
+    editCompanionSection.hidden = !hasCompanion;
+    editCompanionFullName.required = hasCompanion;
+    editCompanionPhone.required = hasCompanion;
+    editCompanionCpf.required = hasCompanion;
+
+    if (!hasCompanion) {
+        editCompanionFullName.value = "";
+        editCompanionPhone.value = "";
+        editCompanionCpf.value = "";
+    }
+}
+
+function openEditDialog(guest) {
+    pendingEditGuestId = guest.id;
+    editGuestDialogSubtitle.textContent = `Editando: ${guest.fullName || "Convidado"}`;
+
+    editFullName.value = guest.fullName || "";
+    editCargo.value = guest.cargo || "convidado";
+    editPersonType.value = guest.personType === "PJ" ? "PJ" : "PF";
+    editCpf.value = maskCpf(guest.cpf || "");
+    editCnpj.value = maskCnpj(guest.cnpj || "");
+    editCompanyName.value = guest.companyName || "";
+    editPhone.value = maskPhone(guest.phone || "");
+
+    const hasCompanion = !!(guest.hasCompanion && guest.companion);
+    editHasCompanion.value = hasCompanion ? "sim" : "nao";
+    editCompanionFullName.value = hasCompanion ? (guest.companion.fullName || "") : "";
+    editCompanionPhone.value = hasCompanion ? maskPhone(guest.companion.phone || "") : "";
+    editCompanionCpf.value = hasCompanion ? maskCpf(guest.companion.cpf || "") : "";
+
+    toggleEditDocumentFields();
+    toggleEditCompanionFields();
+    setEditFeedback("");
+
+    if (typeof editGuestDialog.showModal === "function") {
+        editGuestDialog.showModal();
+    } else {
+        editGuestDialog.setAttribute("open", "true");
+    }
+}
+
+function closeEditDialog() {
+    pendingEditGuestId = null;
+    editGuestForm.reset();
+    toggleEditDocumentFields();
+    toggleEditCompanionFields();
+    setEditFeedback("");
+
+    if (typeof editGuestDialog.close === "function") {
+        editGuestDialog.close();
+    } else {
+        editGuestDialog.removeAttribute("open");
+    }
+}
+
+function validateEditForm() {
+    if (!pendingEditGuestId) {
+        return { ok: false, message: "Convidado não identificado para edição." };
+    }
+
+    if (!isValidFullName(editFullName.value)) {
+        return { ok: false, message: "Informe nome e sobrenome do convidado." };
+    }
+
+    if (!isValidPhone(editPhone.value)) {
+        return { ok: false, message: "Informe um WhatsApp válido do convidado." };
+    }
+
+    const personTypeValue = editPersonType.value;
+    const cpfDigits = onlyDigits(editCpf.value);
+    const cnpjDigits = onlyDigits(editCnpj.value);
+    const documentDigits = personTypeValue === "PF" ? cpfDigits : cnpjDigits;
+
+    if (personTypeValue === "PF") {
+        if (!isValidCpf(cpfDigits)) {
+            return { ok: false, message: "CPF inválido." };
+        }
+    } else {
+        if (!isValidCnpj(cnpjDigits)) {
+            return { ok: false, message: "CNPJ inválido." };
+        }
+
+        if (String(editCompanyName.value || "").trim().length < 2) {
+            return { ok: false, message: "Informe o nome da empresa." };
+        }
+    }
+
+    const duplicated = allGuests.find((guest) => {
+        if (guest.id === pendingEditGuestId || guest.personType !== personTypeValue) {
+            return false;
+        }
+
+        const guestDocument = onlyDigits(personTypeValue === "PF" ? guest.cpf : guest.cnpj);
+        return guestDocument && guestDocument === documentDigits;
+    });
+
+    if (duplicated) {
+        return {
+            ok: false,
+            message: `Já existe um convidado com este documento: ${duplicated.fullName || "Sem nome"}.`,
+        };
+    }
+
+    const hasCompanion = editHasCompanion.value === "sim";
+    if (hasCompanion) {
+        if (!isValidFullName(editCompanionFullName.value)) {
+            return { ok: false, message: "Informe nome e sobrenome do acompanhante." };
+        }
+
+        if (!isValidPhone(editCompanionPhone.value)) {
+            return { ok: false, message: "Informe um WhatsApp válido para o acompanhante." };
+        }
+
+        if (!isValidCpf(editCompanionCpf.value)) {
+            return { ok: false, message: "CPF do acompanhante inválido." };
+        }
+
+        if (normalizeText(editCompanionFullName.value) === normalizeText(editFullName.value)) {
+            return { ok: false, message: "Nome do acompanhante não pode ser igual ao do convidado." };
+        }
+
+        if (onlyDigits(editCompanionPhone.value) === onlyDigits(editPhone.value)) {
+            return { ok: false, message: "WhatsApp do acompanhante não pode ser igual ao principal." };
+        }
+
+        if (personTypeValue === "PF" && onlyDigits(editCompanionCpf.value) === cpfDigits) {
+            return { ok: false, message: "CPF do acompanhante não pode ser igual ao do convidado." };
+        }
+    }
+
+    return { ok: true };
+}
+
+function getEditPayload(baseGuest) {
+    const personTypeValue = editPersonType.value;
+    const hasCompanion = editHasCompanion.value === "sim";
+
+    const payload = {
+        fullName: editFullName.value.trim(),
+        cargo: editCargo.value || "convidado",
+        personType: personTypeValue,
+        cpf: personTypeValue === "PF" ? onlyDigits(editCpf.value) : null,
+        cnpj: personTypeValue === "PJ" ? onlyDigits(editCnpj.value) : null,
+        companyName: personTypeValue === "PJ" ? editCompanyName.value.trim() : null,
+        documentNumber: personTypeValue === "PF" ? onlyDigits(editCpf.value) : onlyDigits(editCnpj.value),
+        phone: onlyDigits(editPhone.value),
+        hasCompanion,
+        companion: hasCompanion
+            ? {
+                fullName: editCompanionFullName.value.trim(),
+                phone: onlyDigits(editCompanionPhone.value),
+                cpf: onlyDigits(editCompanionCpf.value),
+            }
+            : null,
+        updatedAt: serverTimestamp(),
+    };
+
+    if (!hasCompanion || !baseGuest.checkedIn) {
+        payload.companionCheckedIn = false;
+    }
+
+    return payload;
+}
+
+async function handleEditSubmit(event) {
+    event.preventDefault();
+
+    if (!db) {
+        setEditFeedback("Firebase não configurado para administração.");
+        return;
+    }
+
+    if (!pendingEditGuestId) {
+        setEditFeedback("Nenhum convidado selecionado para edição.");
+        return;
+    }
+
+    const validation = validateEditForm();
+    if (!validation.ok) {
+        setEditFeedback(validation.message);
+        return;
+    }
+
+    const baseGuest = getGuestById(pendingEditGuestId);
+    if (!baseGuest) {
+        setEditFeedback("Convidado não encontrado para edição.");
+        return;
+    }
+
+    editGuestSave.disabled = true;
+    editGuestSave.textContent = "Salvando...";
+    setEditFeedback("");
+
+    try {
+        const reference = doc(db, "confirmacoes_jantar", pendingEditGuestId);
+        await updateDoc(reference, getEditPayload(baseGuest));
+
+        setFeedback("Dados do convidado atualizados com sucesso.");
+        closeEditDialog();
+    } catch (error) {
+        console.error(error);
+        setEditFeedback("Não foi possível salvar as alterações. Tente novamente.");
+    } finally {
+        editGuestSave.disabled = false;
+        editGuestSave.textContent = "Salvar alterações";
+    }
+}
+
 function openCargoGuestsDialog(cargoKey) {
     const cargoMeta = CARGO_META[cargoKey];
     if (!cargoMeta) {
@@ -381,6 +743,15 @@ function renderGuests(guests) {
           </div>
 
                     <div class="guest-actions">
+                        <button
+                            class="edit-button"
+                            data-action="edit"
+                            data-id="${guest.id}"
+                            type="button"
+                        >
+                            Editar cadastro
+                        </button>
+
                         <button
                             class="details-button"
                             data-action="details"
@@ -712,6 +1083,14 @@ function setupInteractions() {
             return;
         }
 
+        if (action === "edit") {
+            const guest = getGuestById(guestId);
+            if (guest) {
+                openEditDialog(guest);
+            }
+            return;
+        }
+
         const currentChecked = button.dataset.checked === "1";
         const hasCompanion = button.dataset.hasCompanion === "1";
 
@@ -750,6 +1129,40 @@ function setupInteractions() {
 
     detailsDialogOk.addEventListener("click", () => {
         closeDetailsDialog();
+    });
+
+    editGuestDialogClose.addEventListener("click", closeEditDialog);
+    editGuestCancel.addEventListener("click", closeEditDialog);
+    editGuestForm.addEventListener("submit", handleEditSubmit);
+
+    editPersonType.addEventListener("change", () => {
+        toggleEditDocumentFields();
+        setEditFeedback("");
+    });
+
+    editHasCompanion.addEventListener("change", () => {
+        toggleEditCompanionFields();
+        setEditFeedback("");
+    });
+
+    editCpf.addEventListener("input", () => {
+        editCpf.value = maskCpf(editCpf.value);
+    });
+
+    editCnpj.addEventListener("input", () => {
+        editCnpj.value = maskCnpj(editCnpj.value);
+    });
+
+    editPhone.addEventListener("input", () => {
+        editPhone.value = maskPhone(editPhone.value);
+    });
+
+    editCompanionCpf.addEventListener("input", () => {
+        editCompanionCpf.value = maskCpf(editCompanionCpf.value);
+    });
+
+    editCompanionPhone.addEventListener("input", () => {
+        editCompanionPhone.value = maskPhone(editCompanionPhone.value);
     });
 
     cargoStatsGrid.addEventListener("click", (event) => {
