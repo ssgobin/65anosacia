@@ -46,11 +46,14 @@ const feedback = document.getElementById("formFeedback");
 const submitButton = document.getElementById("submitButton");
 const termsDialog = document.getElementById("termsDialog");
 const successDialog = document.getElementById("successDialog");
+const duplicateDialog = document.getElementById("duplicateDialog");
 const openTermsButton = document.getElementById("openTermsButton");
 const closeTermsButton = document.getElementById("closeTermsButton");
 const agreeTermsButton = document.getElementById("agreeTermsButton");
 const closeSuccessButton = document.getElementById("closeSuccessButton");
+const closeDuplicateButton = document.getElementById("closeDuplicateButton");
 const successMessage = document.getElementById("successMessage");
+const duplicateMessage = document.getElementById("duplicateMessage");
 const termsAccepted = document.getElementById("termsAccepted");
 const termsStatus = document.getElementById("termsStatus");
 
@@ -765,14 +768,25 @@ function setupSuccessDialog() {
     });
 }
 
+function setupDuplicateDialog() {
+    closeDuplicateButton.addEventListener("click", () => {
+        if (typeof duplicateDialog.close === "function") {
+            duplicateDialog.close();
+            return;
+        }
+
+        duplicateDialog.removeAttribute("open");
+    });
+}
+
 function openSuccessDialog(guestName, hasCompanionSelected) {
     const firstName = guestName.trim().split(/\s+/)[0] || "Convidado";
     const highlightedName = `<span class="guest-highlight">${escapeHtml(firstName)}</span>`;
 
     if (hasCompanionSelected) {
-        successMessage.innerHTML = `${highlightedName}, sua presença e a dos seus convidados foi confirmada. Teremos uma noite muito especial para celebrar a história da ACIA com muita alegria.`;
+        successMessage.innerHTML = `${highlightedName}, sua presença e a dos seus convidados foi confirmada. Não haverá envio de e-mail nem QR Code. O acesso será realizado por lista de presença na recepção.`;
     } else {
-        successMessage.innerHTML = `${highlightedName}, sua presença foi confirmada. Teremos uma noite muito especial para celebrar os 65 anos da ACIA com muita emoção.`;
+        successMessage.innerHTML = `${highlightedName}, sua presença foi confirmada. Não haverá envio de e-mail nem QR Code. O acesso será realizado por lista de presença na recepção.`;
     }
 
     if (typeof successDialog.showModal === "function") {
@@ -781,6 +795,17 @@ function openSuccessDialog(guestName, hasCompanionSelected) {
     }
 
     successDialog.setAttribute("open", "true");
+}
+
+function openDuplicateDialog(documentType) {
+    duplicateMessage.textContent = `Ja existe uma confirmacao para este ${documentType}. Nao e necessario confirmar novamente.`;
+
+    if (typeof duplicateDialog.showModal === "function") {
+        duplicateDialog.showModal();
+        return;
+    }
+
+    duplicateDialog.setAttribute("open", "true");
 }
 
 function updateProgressiveFlow() {
@@ -886,7 +911,8 @@ async function handleSubmit(event) {
     try {
         const duplicateSnapshot = await getDocs(duplicateQuery);
         if (!duplicateSnapshot.empty) {
-            setFeedback("Já existe uma confirmação para este CPF/CNPJ.", "error");
+            openDuplicateDialog(personType.value === "PF" ? "CPF" : "CNPJ");
+            setFeedback("", "");
             if (personType.value === "PF") {
                 cpf.focus();
             } else {
@@ -940,6 +966,7 @@ async function handleSubmit(event) {
 setupInputMasks();
 setupTermsDialog();
 setupSuccessDialog();
+setupDuplicateDialog();
 updateProgressiveFlow();
 
 fullName.addEventListener("input", () => {
