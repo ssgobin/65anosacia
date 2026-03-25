@@ -87,7 +87,7 @@ const hasFirebaseConfig = Object.values(firebaseConfig).every(
 let db = null;
 let auth = null;
 let allGuests = [];
-let pendingGuestId = null;
+let pendingCargoTarget = null;
 let guestUnsubscribe = null;
 
 if (hasFirebaseConfig) {
@@ -219,9 +219,20 @@ function renderConfirmed(list) {
                 </div>
 
                 <div class="guest-actions">
-                    <button class="apply-cargo-button" type="button" data-action="apply-cargo" data-id="${guest.id}">Aplicar cargo</button>
-                    <button class="remove-cargo-button" type="button" data-action="remove-cargo" data-id="${guest.id}">Remover cargo</button>
+                    <button class="apply-cargo-button" type="button" data-action="apply-cargo" data-target="guest" data-id="${guest.id}">Aplicar cargo</button>
+                    <button class="remove-cargo-button" type="button" data-action="remove-cargo" data-target="guest" data-id="${guest.id}">Remover cargo</button>
                 </div>
+
+                ${guest.hasCompanion && guest.companion ? `
+                    <div class="companion-note">
+                        <strong>Acompanhante:</strong> ${escapeHtml(guest.companion.fullName || "Sem nome")}
+                        ${cargoBadge(guest.companion.cargo)}
+                    </div>
+                    <div class="guest-actions">
+                        <button class="apply-cargo-button" type="button" data-action="apply-cargo" data-target="companion" data-id="${guest.id}">Aplicar cargo do acompanhante</button>
+                        <button class="remove-cargo-button" type="button" data-action="remove-cargo" data-target="companion" data-id="${guest.id}">Remover cargo do acompanhante</button>
+                    </div>
+                ` : ""}
             </article>
         `;
     }).join("");
@@ -238,6 +249,8 @@ function applyFilterAndRender() {
             guest.cnpj || "",
             guest.companyName || "",
             guest.cargo || "",
+            guest.companion?.fullName || "",
+            guest.companion?.cargo || "",
         ].join(" ").toLowerCase();
 
         return searchBase.includes(term);
@@ -263,7 +276,7 @@ function closeDialog(dialog) {
 }
 
 async function saveCargo() {
-    if (!pendingGuestId) {
+    if (!pendingCargoTarget?.guestId) {
         return;
     }
 
@@ -273,13 +286,20 @@ async function saveCargo() {
     }
 
     try {
-        await updateDoc(doc(db, "confirmacoes_jantar", pendingGuestId), {
-            cargo: cargoSelect.value,
-            updatedAt: serverTimestamp(),
-        });
+        if (pendingCargoTarget.target === "companion") {
+            await updateDoc(doc(db, "confirmacoes_jantar", pendingCargoTarget.guestId), {
+                "companion.cargo": cargoSelect.value,
+                updatedAt: serverTimestamp(),
+            });
+        } else {
+            await updateDoc(doc(db, "confirmacoes_jantar", pendingCargoTarget.guestId), {
+                cargo: cargoSelect.value,
+                updatedAt: serverTimestamp(),
+            });
+        }
 
         closeDialog(cargoDialog);
-        pendingGuestId = null;
+        pendingCargoTarget = null;
         setFeedback("Cargo aplicado com sucesso.", false);
     } catch (error) {
         console.error(error);
@@ -288,18 +308,25 @@ async function saveCargo() {
 }
 
 async function removeCargo() {
-    if (!pendingGuestId) {
+    if (!pendingCargoTarget?.guestId) {
         return;
     }
 
     try {
-        await updateDoc(doc(db, "confirmacoes_jantar", pendingGuestId), {
-            cargo: null,
-            updatedAt: serverTimestamp(),
-        });
+        if (pendingCargoTarget.target === "companion") {
+            await updateDoc(doc(db, "confirmacoes_jantar", pendingCargoTarget.guestId), {
+                "companion.cargo": null,
+                updatedAt: serverTimestamp(),
+            });
+        } else {
+            await updateDoc(doc(db, "confirmacoes_jantar", pendingCargoTarget.guestId), {
+                cargo: null,
+                updatedAt: serverTimestamp(),
+            });
+        }
 
         closeDialog(cargoDialog);
-        pendingGuestId = null;
+        pendingCargoTarget = null;
         setFeedback("Cargo removido com sucesso.", false);
     } catch (error) {
         console.error(error);
@@ -505,21 +532,35 @@ function setupInteractions() {
             return;
         }
 
+        const targetType = button.dataset.target === "companion" ? "companion" : "guest";
+        if (targetType === "companion" && !(guest.hasCompanion && guest.companion)) {
+            setFeedback("Este convidado não possui acompanhante.");
+            return;
+        }
+
         if (button.dataset.action === "remove-cargo") {
-            pendingGuestId = guest.id;
+            pendingCargoTarget = { guestId: guest.id, target: targetType };
             removeCargo();
             return;
         }
 
-        pendingGuestId = guest.id;
-        cargoSelect.value = guest.cargo || "";
-        cargoDialogSubtitle.textContent = `Selecione o cargo para ${guest.fullName || "este confirmado"}.`;
+        pendingCargoTarget = { guestId: guest.id, target: targetType };
+        if (targetType === "companion") {
+            cargoSelect.value = guest.companion?.cargo || "";
+            cargoDialogSubtitle.textContent = `Selecione o cargo para o acompanhante de ${guest.fullName || "este confirmado"}.`;
+        } else {
+            cargoSelect.value = guest.cargo || "";
+            cargoDialogSubtitle.textContent = `Selecione o cargo para ${guest.fullName || "este confirmado"}.`;
+        }
         openDialog(cargoDialog);
     });
 
     saveCargoButton.addEventListener("click", saveCargo);
     removeCargoButton.addEventListener("click", removeCargo);
-    cancelCargoButton.addEventListener("click", () => closeDialog(cargoDialog));
+    cancelCargoButton.addEventListener("click", () => {
+        pendingCargoTarget = null;
+        closeDialog(cargoDialog);
+    });
 
     openCreateButton.addEventListener("click", () => {
         setFeedback("", true, createFeedback);

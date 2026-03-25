@@ -349,6 +349,17 @@ body {
     font-size: 0.9rem;
 }
 
+.companion-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.companion-note .cargo-pill {
+    margin-left: 2px;
+}
+
 .guest-actions {
     display: flex;
     flex-wrap: wrap;

@@ -377,6 +377,10 @@ function cargoBadge(cargo) {
     return `<span class="cargo-pill ${meta.className}">${meta.label}</span>`;
 }
 
+function cargoLabel(cargo) {
+    return CARGO_META[cargo]?.label || CARGO_META.convidado.label;
+}
+
 function getGuestById(guestId) {
     return allGuests.find((guest) => guest.id === guestId) || null;
 }
@@ -397,6 +401,9 @@ function openDetailsDialog(guest) {
     const companionSummary = guest.hasCompanion && guest.companion
         ? `${guest.companion.fullName || "Acompanhante"} | ${formatPhone(guest.companion.phone)} | CPF ${formatCpf(guest.companion.cpf)}`
         : "Sem acompanhante";
+    const companionCargo = guest.hasCompanion && guest.companion
+        ? cargoLabel(guest.companion.cargo)
+        : "Sem acompanhante";
 
     detailsDialogSubtitle.textContent = guest.fullName || "Convidado";
 
@@ -408,6 +415,7 @@ function openDetailsDialog(guest) {
         detailsItem("Nome da empresa", companyValue),
         detailsItem("WhatsApp", formatPhone(guest.phone)),
         detailsItem("Acompanhante", companionSummary),
+        detailsItem("Cargo do acompanhante", companionCargo),
         detailsItem("Termos aceitos em", formatDateTime(guest.acceptedTermsAt)),
         detailsItem("Confirmado em", formatDateTime(guest.createdAt)),
         detailsItem("Status de check-in", guest.checkedIn ? "Chegou no evento" : "Aguardando check-in"),
@@ -608,6 +616,7 @@ function getEditPayload(baseGuest) {
                 fullName: editCompanionFullName.value.trim(),
                 phone: onlyDigits(editCompanionPhone.value),
                 cpf: onlyDigits(editCompanionCpf.value),
+                cargo: baseGuest.companion?.cargo || "convidado",
             }
             : null,
         updatedAt: serverTimestamp(),
@@ -719,6 +728,7 @@ function renderGuests(guests) {
             const companionInfo = hasCompanion
                 ? `${escapeHtml(guest.companion.fullName || "Acompanhante")} | ${formatPhone(guest.companion.phone)} | CPF ${formatCpf(guest.companion.cpf)}`
                 : "Sem acompanhante";
+            const companionCargoBadge = hasCompanion ? cargoBadge(guest.companion.cargo) : "";
 
             const companionStatusBadge = hasCompanion && guest.checkedIn
                 ? (guest.companionCheckedIn === false
@@ -751,7 +761,8 @@ function renderGuests(guests) {
           </div>
 
           <div class="companion-note">
-            <strong>Acompanhante:</strong> ${companionInfo}${companionStatusBadge}
+                        <strong>Acompanhante:</strong>
+                        <span class="companion-inline">${companionInfo} ${companionCargoBadge}</span>${companionStatusBadge}
           </div>
 
                     <div class="guest-actions">
@@ -803,6 +814,7 @@ function applyFilterAndRender() {
             guest.companion?.fullName || "",
             guest.companion?.phone || "",
             guest.companion?.cpf || "",
+            guest.companion?.cargo || "",
         ]
             .join(" ")
             .toLowerCase();
