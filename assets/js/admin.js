@@ -336,6 +336,12 @@ function updateStats(guests) {
         if (cargo && acc[cargo] !== undefined) {
             acc[cargo] += 1;
         }
+
+        const companionCargo = guest.companion?.cargo;
+        if (companionCargo && acc[companionCargo] !== undefined) {
+            acc[companionCargo] += 1;
+        }
+
         return acc;
     }, {
         autoridades: 0,
@@ -350,6 +356,13 @@ function updateStats(guests) {
         if (cargo && acc[cargo] !== undefined && guest.checkedIn) {
             acc[cargo] += 1;
         }
+
+        const companionCargo = guest.companion?.cargo;
+        const companionDidCheckin = guest.checkedIn && guest.companionCheckedIn !== false;
+        if (companionCargo && acc[companionCargo] !== undefined && companionDidCheckin) {
+            acc[companionCargo] += 1;
+        }
+
         return acc;
     }, {
         autoridades: 0,
@@ -679,19 +692,45 @@ function openCargoGuestsDialog(cargoKey) {
         return;
     }
 
-    const guestsByCargo = allGuests.filter((guest) => guest.cargo === cargoKey);
+    const guestsByCargo = allGuests.flatMap((guest) => {
+        const entries = [];
+
+        if (guest.cargo === cargoKey) {
+            entries.push({
+                fullName: guest.fullName || "Sem nome",
+                phone: guest.phone,
+                checkedIn: !!guest.checkedIn,
+            });
+        }
+
+        if (guest.hasCompanion && guest.companion?.cargo === cargoKey) {
+            entries.push({
+                fullName: `${guest.companion.fullName || "Acompanhante"} (acomp. de ${guest.fullName || "Sem nome"})`,
+                phone: guest.companion.phone,
+                checkedIn: !!guest.checkedIn && guest.companionCheckedIn !== false,
+            });
+        }
+
+        return entries;
+    });
+
     const checkedGuestsByCargo = guestsByCargo.filter((guest) => guest.checkedIn);
 
     cargoGuestsDialogTitle.textContent = `Confirmados: ${cargoMeta.label}`;
-    cargoGuestsDialogSubtitle.textContent = `${checkedGuestsByCargo.length} check-in(s) confirmado(s) neste cargo`;
+    cargoGuestsDialogSubtitle.textContent = `${checkedGuestsByCargo.length} de ${guestsByCargo.length} fez/fizeram check-in neste cargo`;
 
-    if (checkedGuestsByCargo.length === 0) {
-        cargoGuestsDialogList.innerHTML = '<div class="empty-state">Nenhum check-in confirmado neste cargo até agora.</div>';
+    if (guestsByCargo.length === 0) {
+        cargoGuestsDialogList.innerHTML = '<div class="empty-state">Nenhum confirmado neste cargo até agora.</div>';
     } else {
-        cargoGuestsDialogList.innerHTML = checkedGuestsByCargo
+        cargoGuestsDialogList.innerHTML = guestsByCargo
             .map((guest) => `
                 <article class="cargo-guest-item">
-                    <strong>${escapeHtml(guest.fullName || "Sem nome")}</strong>
+                    <strong>
+                        ${escapeHtml(guest.fullName || "Sem nome")}
+                        <span class="checkin-label ${guest.checkedIn ? "checkin-done" : "checkin-pending"}">
+                            ${guest.checkedIn ? "Fez check-in" : "Não fez check-in"}
+                        </span>
+                    </strong>
                     <span>${escapeHtml(formatPhone(guest.phone))}</span>
                 </article>
             `)
