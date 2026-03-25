@@ -953,11 +953,63 @@ async function exportXlsx(mode = "all") {
         return;
     }
 
-    const guestsToExport = mode === "authorities"
-        ? allGuests.filter((guest) => EXPORT_AUTHORITIES_CARGOS.has(guest.cargo))
-        : allGuests;
+    const rowsToExport = mode === "authorities"
+        ? allGuests.flatMap((guest) => {
+            const rows = [];
 
-    if (guestsToExport.length === 0) {
+            if (EXPORT_AUTHORITIES_CARGOS.has(guest.cargo)) {
+                rows.push({
+                    isChecked: !!guest.checkedIn,
+                    fullName: guest.fullName || "-",
+                    cargo: CARGO_META[guest.cargo]?.label || "Convidado",
+                    personType: guest.personType || "-",
+                    document: guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj),
+                    company: guest.personType === "PJ" ? (guest.companyName || "-") : "",
+                    phone: formatPhone(guest.phone),
+                    companionName: guest.hasCompanion && guest.companion ? (guest.companion.fullName || "Acompanhante") : "-",
+                    companionCpf: guest.hasCompanion && guest.companion ? formatCpf(guest.companion.cpf) : "-",
+                    companionPhone: guest.hasCompanion && guest.companion ? formatPhone(guest.companion.phone) : "-",
+                    checkinAt: guest.checkedInAt ? formatDateTime(guest.checkedInAt) : "-",
+                    confirmedAt: guest.createdAt ? formatDateTime(guest.createdAt) : "-",
+                });
+            }
+
+            if (guest.hasCompanion && EXPORT_AUTHORITIES_CARGOS.has(guest.companion?.cargo)) {
+                const companionCheckedIn = !!guest.checkedIn && guest.companionCheckedIn !== false;
+                rows.push({
+                    isChecked: companionCheckedIn,
+                    fullName: `${guest.companion.fullName || "Acompanhante"} (Acompanhante)`,
+                    cargo: CARGO_META[guest.companion.cargo]?.label || "Convidado",
+                    personType: "PF",
+                    document: formatCpf(guest.companion.cpf),
+                    company: "",
+                    phone: formatPhone(guest.companion.phone),
+                    companionName: `Titular: ${guest.fullName || "-"}`,
+                    companionCpf: "-",
+                    companionPhone: formatPhone(guest.phone),
+                    checkinAt: companionCheckedIn && guest.checkedInAt ? formatDateTime(guest.checkedInAt) : "-",
+                    confirmedAt: guest.createdAt ? formatDateTime(guest.createdAt) : "-",
+                });
+            }
+
+            return rows;
+        })
+        : allGuests.map((guest) => ({
+            isChecked: !!guest.checkedIn,
+            fullName: guest.fullName || "-",
+            cargo: CARGO_META[guest.cargo]?.label || "Convidado",
+            personType: guest.personType || "-",
+            document: guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj),
+            company: guest.personType === "PJ" ? (guest.companyName || "-") : "",
+            phone: formatPhone(guest.phone),
+            companionName: guest.hasCompanion && guest.companion ? (guest.companion.fullName || "Acompanhante") : "-",
+            companionCpf: guest.hasCompanion && guest.companion ? formatCpf(guest.companion.cpf) : "-",
+            companionPhone: guest.hasCompanion && guest.companion ? formatPhone(guest.companion.phone) : "-",
+            checkinAt: guest.checkedInAt ? formatDateTime(guest.checkedInAt) : "-",
+            confirmedAt: guest.createdAt ? formatDateTime(guest.createdAt) : "-",
+        }));
+
+    if (rowsToExport.length === 0) {
         if (mode === "authorities") {
             setFeedback("Nenhum convidado dos cargos de autoridades para exportar.");
             return;
@@ -1032,18 +1084,12 @@ async function exportXlsx(mode = "all") {
     sheet.getRow(4).height = 22;
 
     // ── Linhas 5-8: Dados do resumo ──────────────────────────────────────────
-    const totalPeople = guestsToExport.reduce(
-        (acc, g) => acc + 1 + (g.hasCompanion && g.companion ? 1 : 0), 0
-    );
-    const checkedPeople = guestsToExport.reduce((acc, g) => {
-        if (!g.checkedIn) return acc;
-        const cpCame = g.hasCompanion && g.companion && g.companionCheckedIn !== false;
-        return acc + 1 + (cpCame ? 1 : 0);
-    }, 0);
+    const totalPeople = rowsToExport.length;
+    const checkedPeople = rowsToExport.reduce((acc, row) => acc + (row.isChecked ? 1 : 0), 0);
 
     const stats = [
         ["Total de Pessoas (com acompanhantes)", totalPeople],
-        ["Total de Convidados cadastrados", guestsToExport.length],
+        ["Total de Registros exportados", rowsToExport.length],
         ["Check-in Realizado", checkedPeople],
         ["Aguardando Chegada", totalPeople - checkedPeople],
     ];
@@ -1096,28 +1142,26 @@ async function exportXlsx(mode = "all") {
     });
 
     // ── Linhas de dados ───────────────────────────────────────────────────────
-    guestsToExport.forEach((guest, i) => {
-        const isChecked = !!guest.checkedIn;
-        const hasCp = !!(guest.hasCompanion && guest.companion);
-        const docValue = guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj);
+    rowsToExport.forEach((row, i) => {
+        const isChecked = row.isChecked;
         const bgColor = isChecked ? "FFECFDF5" : "FFFEFCE8";
         const statusColor = isChecked ? "FF166534" : "FFB45309";
         const statusText = isChecked ? "Chegou" : "Aguardando";
 
         const dataRow = sheet.addRow({
             num: i + 1,
-            name: guest.fullName || "-",
-            cargo: CARGO_META[guest.cargo]?.label || "Convidado",
-            type: guest.personType || "-",
-            document: docValue,
-            company: guest.personType === "PJ" ? (guest.companyName || "-") : "",
-            phone: formatPhone(guest.phone),
-            companion: hasCp ? (guest.companion.fullName || "Acompanhante") : "-",
-            companionCpf: hasCp ? formatCpf(guest.companion.cpf) : "-",
-            companionPhone: hasCp ? formatPhone(guest.companion.phone) : "-",
+            name: row.fullName,
+            cargo: row.cargo,
+            type: row.personType,
+            document: row.document,
+            company: row.company,
+            phone: row.phone,
+            companion: row.companionName,
+            companionCpf: row.companionCpf,
+            companionPhone: row.companionPhone,
             status: statusText,
-            checkinAt: guest.checkedInAt ? formatDateTime(guest.checkedInAt) : "-",
-            confirmedAt: guest.createdAt ? formatDateTime(guest.createdAt) : "-",
+            checkinAt: row.checkinAt,
+            confirmedAt: row.confirmedAt,
         });
 
         dataRow.height = 18;
