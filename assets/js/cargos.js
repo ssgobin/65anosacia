@@ -40,6 +40,7 @@ const CARGO_OPTIONS = {
     ex_presidentes: { label: "Ex-presidentes", className: "cargo-ex_presidentes" },
     patrocinadores: { label: "Patrocinadores", className: "cargo-patrocinadores" },
     diretoria: { label: "Diretoria", className: "cargo-diretoria" },
+    outras_entidades: { label: "Outras entidades", className: "cargo-outras_entidades" },
 };
 
 const adminEmailBadge = document.getElementById("adminEmailBadge");

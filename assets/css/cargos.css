@@ -4,6 +4,7 @@
     --cargo-expresidentes: #b91c1c;
     --cargo-patrocinadores: #a855f7;
     --cargo-diretoria: #1e3a8a;
+    --cargo-outras-entidades: #f97316;
 }
 
 .modal-field {
@@ -153,6 +154,11 @@
 
 .cargo-pill.cargo-diretoria {
     background: var(--cargo-diretoria);
+}
+
+.cargo-pill.cargo-outras_entidades {
+    background: var(--cargo-outras-entidades);
+    color: #7c2d12;
 }
 
 .guest-main.with-cargo {

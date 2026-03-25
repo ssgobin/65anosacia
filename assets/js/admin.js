@@ -34,11 +34,13 @@ const cargoHomenageadosCount = document.getElementById("cargoHomenageadosCount")
 const cargoExPresidentesCount = document.getElementById("cargoExPresidentesCount");
 const cargoPatrocinadoresCount = document.getElementById("cargoPatrocinadoresCount");
 const cargoDiretoriaCount = document.getElementById("cargoDiretoriaCount");
+const cargoOutrasEntidadesCount = document.getElementById("cargoOutrasEntidadesCount");
 const cargoAutoridadesCheckinCount = document.getElementById("cargoAutoridadesCheckinCount");
 const cargoHomenageadosCheckinCount = document.getElementById("cargoHomenageadosCheckinCount");
 const cargoExPresidentesCheckinCount = document.getElementById("cargoExPresidentesCheckinCount");
 const cargoPatrocinadoresCheckinCount = document.getElementById("cargoPatrocinadoresCheckinCount");
 const cargoDiretoriaCheckinCount = document.getElementById("cargoDiretoriaCheckinCount");
+const cargoOutrasEntidadesCheckinCount = document.getElementById("cargoOutrasEntidadesCheckinCount");
 const cargoStatsGrid = document.getElementById("cargoStatsGrid");
 const searchInput = document.getElementById("searchInput");
 const guestList = document.getElementById("guestList");
@@ -103,6 +105,7 @@ const CARGO_META = {
     ex_presidentes: { label: "Ex-presidentes", className: "cargo-ex_presidentes" },
     patrocinadores: { label: "Patrocinadores", className: "cargo-patrocinadores" },
     diretoria: { label: "Diretoria", className: "cargo-diretoria" },
+    outras_entidades: { label: "Outras entidades", className: "cargo-outras_entidades" },
 };
 
 const EXPORT_AUTHORITIES_CARGOS = new Set([
@@ -111,6 +114,7 @@ const EXPORT_AUTHORITIES_CARGOS = new Set([
     "diretoria",
     "patrocinadores",
     "ex_presidentes",
+    "outras_entidades",
 ]);
 
 const hasFirebaseConfig = Object.values(firebaseConfig).every(
@@ -349,6 +353,7 @@ function updateStats(guests) {
         ex_presidentes: 0,
         patrocinadores: 0,
         diretoria: 0,
+        outras_entidades: 0,
     });
 
     const cargoCheckinCounts = guests.reduce((acc, guest) => {
@@ -370,6 +375,7 @@ function updateStats(guests) {
         ex_presidentes: 0,
         patrocinadores: 0,
         diretoria: 0,
+        outras_entidades: 0,
     });
 
     if (cargoAutoridadesCount) cargoAutoridadesCount.textContent = String(cargoCounts.autoridades);
@@ -377,11 +383,13 @@ function updateStats(guests) {
     if (cargoExPresidentesCount) cargoExPresidentesCount.textContent = String(cargoCounts.ex_presidentes);
     if (cargoPatrocinadoresCount) cargoPatrocinadoresCount.textContent = String(cargoCounts.patrocinadores);
     if (cargoDiretoriaCount) cargoDiretoriaCount.textContent = String(cargoCounts.diretoria);
+    if (cargoOutrasEntidadesCount) cargoOutrasEntidadesCount.textContent = String(cargoCounts.outras_entidades);
     if (cargoAutoridadesCheckinCount) cargoAutoridadesCheckinCount.textContent = String(cargoCheckinCounts.autoridades);
     if (cargoHomenageadosCheckinCount) cargoHomenageadosCheckinCount.textContent = String(cargoCheckinCounts.homenageados);
     if (cargoExPresidentesCheckinCount) cargoExPresidentesCheckinCount.textContent = String(cargoCheckinCounts.ex_presidentes);
     if (cargoPatrocinadoresCheckinCount) cargoPatrocinadoresCheckinCount.textContent = String(cargoCheckinCounts.patrocinadores);
     if (cargoDiretoriaCheckinCount) cargoDiretoriaCheckinCount.textContent = String(cargoCheckinCounts.diretoria);
+    if (cargoOutrasEntidadesCheckinCount) cargoOutrasEntidadesCheckinCount.textContent = String(cargoCheckinCounts.outras_entidades);
 }
 
 function cargoBadge(cargo) {
