@@ -1084,8 +1084,14 @@ async function exportXlsx(mode = "all") {
     sheet.getRow(4).height = 22;
 
     // ── Linhas 5-8: Dados do resumo ──────────────────────────────────────────
-    const totalPeople = rowsToExport.length;
-    const checkedPeople = rowsToExport.reduce((acc, row) => acc + (row.isChecked ? 1 : 0), 0);
+    const totalPeople = allGuests.reduce((acc, guest) => acc + 1 + (guest.hasCompanion && guest.companion ? 1 : 0), 0);
+    const checkedPeople = allGuests.reduce((acc, guest) => {
+        let count = guest.checkedIn ? 1 : 0;
+        if (guest.hasCompanion && guest.companion && guest.companionCheckedIn !== false) {
+            count += 1;
+        }
+        return acc + count;
+    }, 0);
 
     const stats = [
         ["Total de Pessoas (com acompanhantes)", totalPeople],
