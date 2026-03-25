@@ -593,6 +593,18 @@ body {
     gap: 12px;
 }
 
+#editGuestDialog {
+    width: min(94vw, 820px);
+    max-height: 92vh;
+    overflow: hidden;
+}
+
+#editGuestDialog article {
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 18px 18px 14px;
+}
+
 .edit-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
