@@ -62,6 +62,10 @@ const cargoGuestsDialogList = document.getElementById("cargoGuestsDialogList");
 const cargoGuestsDialogClose = document.getElementById("cargoGuestsDialogClose");
 const cargoGuestsDialogOk = document.getElementById("cargoGuestsDialogOk");
 const exportButton = document.getElementById("exportButton");
+const exportOptionsDialog = document.getElementById("exportOptionsDialog");
+const exportAllButton = document.getElementById("exportAllButton");
+const exportAuthoritiesButton = document.getElementById("exportAuthoritiesButton");
+const exportOptionsCancelButton = document.getElementById("exportOptionsCancelButton");
 const editGuestDialog = document.getElementById("editGuestDialog");
 const editGuestDialogClose = document.getElementById("editGuestDialogClose");
 const editGuestDialogSubtitle = document.getElementById("editGuestDialogSubtitle");
@@ -100,6 +104,14 @@ const CARGO_META = {
     patrocinadores: { label: "Patrocinadores", className: "cargo-patrocinadores" },
     diretoria: { label: "Diretoria", className: "cargo-diretoria" },
 };
+
+const EXPORT_AUTHORITIES_CARGOS = new Set([
+    "autoridades",
+    "homenageados",
+    "diretoria",
+    "patrocinadores",
+    "ex_presidentes",
+]);
 
 const hasFirebaseConfig = Object.values(firebaseConfig).every(
     (value) => typeof value === "string" && !value.startsWith("COLOQUE_")
@@ -860,8 +872,37 @@ function closeCheckinDialog() {
     }
 }
 
-async function exportXlsx() {
+function openExportOptionsDialog() {
+    if (typeof exportOptionsDialog.showModal === "function") {
+        exportOptionsDialog.showModal();
+    } else {
+        exportOptionsDialog.setAttribute("open", "true");
+    }
+}
+
+function closeExportOptionsDialog() {
+    if (typeof exportOptionsDialog.close === "function") {
+        exportOptionsDialog.close();
+    } else {
+        exportOptionsDialog.removeAttribute("open");
+    }
+}
+
+async function exportXlsx(mode = "all") {
     if (!allGuests || allGuests.length === 0) {
+        setFeedback("Nenhum convidado para exportar.");
+        return;
+    }
+
+    const guestsToExport = mode === "authorities"
+        ? allGuests.filter((guest) => EXPORT_AUTHORITIES_CARGOS.has(guest.cargo))
+        : allGuests;
+
+    if (guestsToExport.length === 0) {
+        if (mode === "authorities") {
+            setFeedback("Nenhum convidado dos cargos de autoridades para exportar.");
+            return;
+        }
         setFeedback("Nenhum convidado para exportar.");
         return;
     }
@@ -881,11 +922,12 @@ async function exportXlsx() {
         pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1 },
     });
 
-    const TOTAL_COLS = 12;
+    const TOTAL_COLS = 13;
 
     sheet.columns = [
         { key: "num", width: 5 },
         { key: "name", width: 32 },
+        { key: "cargo", width: 18 },
         { key: "type", width: 8 },
         { key: "document", width: 20 },
         { key: "company", width: 26 },
@@ -901,7 +943,9 @@ async function exportXlsx() {
     // ── Linha 1: Título ──────────────────────────────────────────────────────
     sheet.mergeCells(1, 1, 1, TOTAL_COLS);
     const titleCell = sheet.getCell(1, 1);
-    titleCell.value = "ACIA 65 Anos — Lista de Convidados";
+    titleCell.value = mode === "authorities"
+        ? "ACIA 65 Anos — Lista de Autoridades"
+        : "ACIA 65 Anos — Lista de Convidados";
     titleCell.font = { name: "Calibri", bold: true, size: 20, color: { argb: "FF1E3A8A" } };
     titleCell.alignment = { horizontal: "center", vertical: "middle" };
     titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1E3FF" } };
@@ -929,10 +973,10 @@ async function exportXlsx() {
     sheet.getRow(4).height = 22;
 
     // ── Linhas 5-8: Dados do resumo ──────────────────────────────────────────
-    const totalPeople = allGuests.reduce(
+    const totalPeople = guestsToExport.reduce(
         (acc, g) => acc + 1 + (g.hasCompanion && g.companion ? 1 : 0), 0
     );
-    const checkedPeople = allGuests.reduce((acc, g) => {
+    const checkedPeople = guestsToExport.reduce((acc, g) => {
         if (!g.checkedIn) return acc;
         const cpCame = g.hasCompanion && g.companion && g.companionCheckedIn !== false;
         return acc + 1 + (cpCame ? 1 : 0);
@@ -940,7 +984,7 @@ async function exportXlsx() {
 
     const stats = [
         ["Total de Pessoas (com acompanhantes)", totalPeople],
-        ["Total de Convidados cadastrados", allGuests.length],
+        ["Total de Convidados cadastrados", guestsToExport.length],
         ["Check-in Realizado", checkedPeople],
         ["Aguardando Chegada", totalPeople - checkedPeople],
     ];
@@ -971,7 +1015,7 @@ async function exportXlsx() {
 
     // ── Linha 10: Cabeçalhos das colunas ─────────────────────────────────────
     const HEADER_LABELS = [
-        "#", "Nome Completo", "Tipo", "Documento", "Empresa",
+        "#", "Nome Completo", "Cargo", "Tipo", "Documento", "Empresa",
         "WhatsApp", "Acompanhante", "CPF Acompanhante", "WhatsApp Acomp.",
         "Status", "Check-in em", "Confirmado em",
     ];
@@ -993,7 +1037,7 @@ async function exportXlsx() {
     });
 
     // ── Linhas de dados ───────────────────────────────────────────────────────
-    allGuests.forEach((guest, i) => {
+    guestsToExport.forEach((guest, i) => {
         const isChecked = !!guest.checkedIn;
         const hasCp = !!(guest.hasCompanion && guest.companion);
         const docValue = guest.personType === "PF" ? formatCpf(guest.cpf) : formatCnpj(guest.cnpj);
@@ -1004,6 +1048,7 @@ async function exportXlsx() {
         const dataRow = sheet.addRow({
             num: i + 1,
             name: guest.fullName || "-",
+            cargo: CARGO_META[guest.cargo]?.label || "Convidado",
             type: guest.personType || "-",
             document: docValue,
             company: guest.personType === "PJ" ? (guest.companyName || "-") : "",
@@ -1025,10 +1070,10 @@ async function exportXlsx() {
                 bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
                 right: { style: "thin", color: { argb: "FFE5E7EB" } },
             };
-            if ([1, 3, 10, 11, 12].includes(colNum)) {
+            if ([1, 4, 11, 12, 13].includes(colNum)) {
                 cell.alignment = { horizontal: "center", vertical: "middle" };
             }
-            if (colNum === 10) {
+            if (colNum === 11) {
                 cell.font = { name: "Calibri", size: 10, bold: true, color: { argb: statusColor } };
             }
         });
@@ -1042,20 +1087,37 @@ async function exportXlsx() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `convidados_acia65_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const exportDate = new Date().toISOString().slice(0, 10);
+    anchor.download = mode === "authorities"
+        ? `autoridades_acia65_${exportDate}.xlsx`
+        : `convidados_acia65_${exportDate}.xlsx`;
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 
-    setFeedback("Planilha exportada com sucesso!");
+    setFeedback(mode === "authorities"
+        ? "Planilha de autoridades exportada com sucesso!"
+        : "Planilha exportada com sucesso!");
     setTimeout(() => setFeedback(""), 3000);
 }
 
 
 function setupInteractions() {
     searchInput.addEventListener("input", applyFilterAndRender);
-    exportButton.addEventListener("click", exportXlsx);
+    exportButton.addEventListener("click", openExportOptionsDialog);
+
+    exportAllButton.addEventListener("click", async () => {
+        closeExportOptionsDialog();
+        await exportXlsx("all");
+    });
+
+    exportAuthoritiesButton.addEventListener("click", async () => {
+        closeExportOptionsDialog();
+        await exportXlsx("authorities");
+    });
+
+    exportOptionsCancelButton.addEventListener("click", closeExportOptionsDialog);
 
     guestList.addEventListener("click", (event) => {
         const target = event.target;
