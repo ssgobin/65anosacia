@@ -53,16 +53,16 @@ let processingCooldown = false;
 let pendingGuestDoc = null;
 let pendingGuestData = null;
 
-const checkinDialog = document.getElementById("checkinDialog");
-const modalGuestName = document.getElementById("modalGuestName");
-const modalGuestCargo = document.getElementById("modalGuestCargo");
-const companionInfoSection = document.getElementById("companionInfoSection");
-const modalCompanionName = document.getElementById("modalCompanionName");
-const modalCompanionCargo = document.getElementById("modalCompanionCargo");
-const checkinMainGuestBtn = document.getElementById("checkinMainGuestBtn");
-const checkinCompanionOnlyBtn = document.getElementById("checkinCompanionOnlyBtn");
-const checkinBothBtn = document.getElementById("checkinBothBtn");
-const cancelCheckinBtn = document.getElementById("cancelCheckinBtn");
+let checkinDialog = null;
+let modalGuestName = null;
+let modalGuestCargo = null;
+let companionInfoSection = null;
+let modalCompanionName = null;
+let modalCompanionCargo = null;
+let checkinMainGuestBtn = null;
+let checkinCompanionOnlyBtn = null;
+let checkinBothBtn = null;
+let cancelCheckinBtn = null;
 
 const CARGO_LABELS = {
     "diretoria": "Diretoria",
@@ -103,27 +103,35 @@ logoutButton.addEventListener("click", async () => {
     }
 });
 
-checkinMainGuestBtn.addEventListener("click", async () => {
-    if (!pendingGuestDoc || !pendingGuestData) return;
-    await performCheckin("main");
-});
+if (checkinMainGuestBtn) {
+    checkinMainGuestBtn.addEventListener("click", async () => {
+        if (!pendingGuestDoc || !pendingGuestData) return;
+        await performCheckin("main");
+    });
+}
 
-checkinCompanionOnlyBtn.addEventListener("click", async () => {
-    if (!pendingGuestDoc || !pendingGuestData) return;
-    await performCheckin("companion");
-});
+if (checkinCompanionOnlyBtn) {
+    checkinCompanionOnlyBtn.addEventListener("click", async () => {
+        if (!pendingGuestDoc || !pendingGuestData) return;
+        await performCheckin("companion");
+    });
+}
 
-checkinBothBtn.addEventListener("click", async () => {
-    if (!pendingGuestDoc || !pendingGuestData) return;
-    await performCheckin("both");
-});
+if (checkinBothBtn) {
+    checkinBothBtn.addEventListener("click", async () => {
+        if (!pendingGuestDoc || !pendingGuestData) return;
+        await performCheckin("both");
+    });
+}
 
-cancelCheckinBtn.addEventListener("click", () => {
-    checkinDialog.close();
-    pendingGuestDoc = null;
-    pendingGuestData = null;
-    scheduleCooldownReset(2000);
-});
+if (cancelCheckinBtn) {
+    cancelCheckinBtn.addEventListener("click", () => {
+        if (checkinDialog) checkinDialog.classList.add("hidden");
+        pendingGuestDoc = null;
+        pendingGuestData = null;
+        scheduleCooldownReset(2000);
+    });
+}
 
 // ── Formatadores ──────────────────────────────────────────────────────────────
 function formatDateTime(value) {
@@ -272,6 +280,10 @@ async function processQrCode(rawValue) {
 }
 
 function showCheckinModal(guestData) {
+    if (!checkinDialog || !modalGuestName) return;
+    
+    checkinDialog.classList.remove("hidden");
+    
     modalGuestName.textContent = guestData.fullName;
     modalGuestCargo.textContent = getCargoLabel(guestData.cargo);
     
@@ -321,7 +333,9 @@ function showCheckinModal(guestData) {
 }
 
 async function performCheckin(type) {
-    checkinDialog.close();
+    if (!checkinDialog) return;
+    
+    checkinDialog.classList.add("hidden");
     
     const updates = {
         qrCodeUsed: true,
@@ -482,5 +496,29 @@ manualTokenInput.addEventListener("keypress", (event) => {
             processQrCode(token);
             manualTokenInput.value = "";
         }
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    checkinDialog = document.getElementById("checkinDialog");
+    modalGuestName = document.getElementById("modalGuestName");
+    modalGuestCargo = document.getElementById("modalGuestCargo");
+    companionInfoSection = document.getElementById("companionInfoSection");
+    modalCompanionName = document.getElementById("modalCompanionName");
+    modalCompanionCargo = document.getElementById("modalCompanionCargo");
+    checkinMainGuestBtn = document.getElementById("checkinMainGuestBtn");
+    checkinCompanionOnlyBtn = document.getElementById("checkinCompanionOnlyBtn");
+    checkinBothBtn = document.getElementById("checkinBothBtn");
+    cancelCheckinBtn = document.getElementById("cancelCheckinBtn");
+    
+    if (checkinDialog) {
+        checkinDialog.addEventListener("click", (e) => {
+            if (e.target === checkinDialog) {
+                checkinDialog.classList.add("hidden");
+                pendingGuestDoc = null;
+                pendingGuestData = null;
+                scheduleCooldownReset(2000);
+            }
+        });
     }
 });
