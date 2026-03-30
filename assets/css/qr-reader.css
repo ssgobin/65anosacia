@@ -439,15 +439,15 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(15, 23, 42, 0.6);
-    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    z-index: 1000;
 }
 
-.checkin-modal::backdrop {
-    background: rgba(15, 23, 42, 0.6);
+.checkin-modal.hidden {
+    display: none !important;
 }
 
 .checkin-modal-content {
