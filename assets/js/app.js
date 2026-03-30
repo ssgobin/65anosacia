@@ -300,17 +300,7 @@ function generateSecureToken() {
 
 async function generateQrCodeForEmail(token) {
     const qrCodeUrl = `https://convite65anos.web.app/verify?token=${token}`;
-    try {
-        const QRCodeLib = await loadQRCodeLib();
-        return await QRCodeLib.toDataURL(qrCodeUrl, {
-            width: 250,
-            margin: 2,
-            errorCorrectionLevel: 'M'
-        });
-    } catch (err) {
-        console.error('Erro ao gerar QR code local:', err);
-        return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCodeUrl)}`;
-    }
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCodeUrl)}`;
 }
 
 async function loadQRCodeLib(attempts = 0) {
@@ -323,13 +313,6 @@ async function loadQRCodeLib(attempts = 0) {
             script.onload = () => {
                 const QRCodeLib = window.QRCode;
                 window.QRCode = {
-                    toDataURL: (text, opts) => {
-                        return new Promise((resolve) => {
-                            const canvas = document.createElement('canvas');
-                            new QRCodeLib(canvas, { text, width: opts?.width || 250, margin: opts?.margin || 2 });
-                            setTimeout(() => resolve(canvas.toDataURL('image/png')), 100);
-                        });
-                    },
                     toCanvas: (canvas, text, opts) => {
                         return new Promise((res) => {
                             new QRCodeLib(canvas, { text, width: opts?.width || 250, margin: opts?.margin || 2 });
@@ -362,22 +345,10 @@ async function sendEmailWithQRCode(email, guestName, token, qrCodeDataUrl, templ
         template_params: {
             to_email: email,
             to_name: guestName,
+            qr_code_url: qrCodeDataUrl,
             ...extraParams
         }
     };
-
-    if (qrCodeDataUrl && qrCodeDataUrl.startsWith('data:')) {
-        emailData.template_params.qr_code_url = 'cid:qrcode@emailjs';
-        emailData.attachments = [
-            {
-                name: "qrcode.png",
-                data: qrCodeDataUrl.split(',')[1],
-                cid: "qrcode@emailjs"
-            }
-        ];
-    } else {
-        emailData.template_params.qr_code_url = qrCodeDataUrl;
-    }
 
     const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
