@@ -1054,6 +1054,9 @@ async function handleSubmit(event) {
                         phone: onlyDigits(companionPhone.value),
                         cpf: onlyDigits(companionCpf.value),
                         email: companionEmail.value.trim().toLowerCase(),
+                        qrCodeToken: generateSecureToken(),
+                        qrCodeUsed: false,
+                        qrCodeUsedAt: null,
                     }
                     : null,
             acceptedTerms: true,
@@ -1078,19 +1081,21 @@ async function handleSubmit(event) {
 
         // Envia email em background (não bloqueia a tela de sucesso)
         try {
+            // QR Code para o titular
             const qrCodeDataUrl = await generateQrCodeForEmail(guestToken);
             
             // Envia email para o titular
             await sendEmailWithQRCode(payload.email, payload.fullName, guestToken, qrCodeDataUrl);
             console.log('E-mail com QR Code enviado com sucesso para:', payload.email);
 
-            // Envia email para o acompanhante - MESMO QR Code, mas template diferente
+            // Envia email para o acompanhante - QR Code DIFERENTE
             if (payload.hasCompanion && payload.companion && payload.companion.email) {
+                const companionQrCodeDataUrl = await generateQrCodeForEmail(payload.companion.qrCodeToken);
                 await sendEmailWithQRCode(
                     payload.companion.email, 
                     payload.companion.fullName, 
-                    guestToken, 
-                    qrCodeDataUrl,
+                    payload.companion.qrCodeToken, 
+                    companionQrCodeDataUrl,
                     'template_vb8gv09',  // Template específico para acompanhante
                     { nome_titular: payload.fullName }  // Variável extra para o template
                 );

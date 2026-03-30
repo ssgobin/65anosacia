@@ -181,11 +181,29 @@ async function processQrCode(rawValue) {
     clearResult();
 
     try {
-        const snapshot = await getDocs(query(
+        // Primeiro, procura pelo token do titular
+        let snapshot = await getDocs(query(
             collection(db, "confirmacoes_jantar"),
             where("qrCodeToken", "==", token),
             limit(1)
         ));
+
+        let isCompanionToken = false;
+        let guestDoc = null;
+        let guestData = null;
+
+        // Se não encontrou pelo token do titular, procura pelo token do acompanhante
+        if (snapshot.empty) {
+            snapshot = await getDocs(query(
+                collection(db, "confirmacoes_jantar"),
+                where("companion.qrCodeToken", "==", token),
+                limit(1)
+            ));
+            
+            if (!snapshot.empty) {
+                isCompanionToken = true;
+            }
+        }
 
         if (snapshot.empty) {
             setStatus("QR Code inválido", "error");
@@ -199,13 +217,79 @@ async function processQrCode(rawValue) {
             return;
         }
 
-        const guestDoc = snapshot.docs[0];
-        const guestData = guestDoc.data();
+        guestDoc = snapshot.docs[0];
+        guestData = guestDoc.data();
         
         const hasCompanion = guestData.hasCompanion && guestData.companion;
         const mainCheckedIn = guestData.checkedIn;
         const companionCheckedIn = guestData.companionCheckedIn;
 
+        // Se é token do acompanhante
+        if (isCompanionToken) {
+            if (!hasCompanion) {
+                setStatus("QR Code inválido", "error");
+                showResult(
+                    `<span class="result-icon">✗</span>
+                     <span class="result-name">QR Code não encontrado</span>
+                     <span class="result-detail">Este QR Code não corresponde a nenhum convidado</span>`,
+                    "error"
+                );
+                scheduleCooldownReset(5000);
+                return;
+            }
+
+            // Verifica se o QR Code do acompanhante já foi usado
+            if (guestData.companion?.qrCodeUsed) {
+                setStatus("QR Code já utilizado", "error");
+                showResult(
+                    `<span class="result-icon">✗</span>
+                     <span class="result-name">${escapeHtml(guestData.companion.fullName || "Acompanhante")}</span>
+                     <span class="result-detail">QR Code do acompanhante já utilizado em: ${formatDateTime(guestData.companion.qrCodeUsedAt)}</span>`,
+                    "error"
+                );
+                scheduleCooldownReset(5000);
+                return;
+            }
+
+            // Verifica se o acompanhante já fez check-in
+            if (companionCheckedIn) {
+                setStatus("Check-in já realizado!", "success");
+                showResult(
+                    `<span class="result-icon">✓</span>
+                     <span class="result-name">${escapeHtml(guestData.companion.fullName || "Acompanhante")}</span>
+                     <span class="result-detail">Check-in já realizado!</span>`,
+                    "success"
+                );
+                scheduleCooldownReset(4000);
+                return;
+            }
+
+            // Faz check-in do acompanhante diretamente
+            await updateDoc(doc(db, "confirmacoes_jantar", guestDoc.id), {
+                companionCheckedIn: true,
+                companionCheckedInAt: serverTimestamp(),
+                'companion.qrCodeUsed': true,
+                'companion.qrCodeUsedAt': serverTimestamp(),
+                checkinMethod: "qrcode"
+            });
+
+            setStatus("Check-in realizado!", "success");
+            showResult(
+                `<span class="result-icon">✓</span>
+                 <span class="result-name">${escapeHtml(guestData.companion.fullName || "Acompanhante")}</span>
+                 <span class="result-detail">Entrada do acompanhante registrada!</span>`,
+                "success"
+            );
+            
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+            
+            scheduleCooldownReset(4000);
+            return;
+        }
+
+        // Se é token do titular (lógica original)
         if (guestData.qrCodeUsed) {
             setStatus("QR Code já utilizado", "error");
             showResult(
@@ -308,19 +392,21 @@ async function performCheckin(type) {
     checkinDialog.classList.add("hidden");
     
     const updates = {
-        qrCodeUsed: true,
-        qrCodeUsedAt: serverTimestamp(),
         checkinMethod: "qrcode"
     };
     
     if (type === "main" || type === "both") {
         updates.checkedIn = true;
         updates.checkedInAt = serverTimestamp();
+        updates.qrCodeUsed = true;
+        updates.qrCodeUsedAt = serverTimestamp();
     }
     
     if (type === "companion" || type === "both") {
         updates.companionCheckedIn = true;
         updates.companionCheckedInAt = serverTimestamp();
+        updates['companion.qrCodeUsed'] = true;
+        updates['companion.qrCodeUsedAt'] = serverTimestamp();
     }
     
     try {
