@@ -103,36 +103,6 @@ logoutButton.addEventListener("click", async () => {
     }
 });
 
-if (checkinMainGuestBtn) {
-    checkinMainGuestBtn.addEventListener("click", async () => {
-        if (!pendingGuestDoc || !pendingGuestData) return;
-        await performCheckin("main");
-    });
-}
-
-if (checkinCompanionOnlyBtn) {
-    checkinCompanionOnlyBtn.addEventListener("click", async () => {
-        if (!pendingGuestDoc || !pendingGuestData) return;
-        await performCheckin("companion");
-    });
-}
-
-if (checkinBothBtn) {
-    checkinBothBtn.addEventListener("click", async () => {
-        if (!pendingGuestDoc || !pendingGuestData) return;
-        await performCheckin("both");
-    });
-}
-
-if (cancelCheckinBtn) {
-    cancelCheckinBtn.addEventListener("click", () => {
-        if (checkinDialog) checkinDialog.classList.add("hidden");
-        pendingGuestDoc = null;
-        pendingGuestData = null;
-        scheduleCooldownReset(2000);
-    });
-}
-
 // ── Formatadores ──────────────────────────────────────────────────────────────
 function formatDateTime(value) {
     if (!value) return "-";
@@ -519,6 +489,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 pendingGuestData = null;
                 scheduleCooldownReset(2000);
             }
+        });
+    }
+    
+    if (checkinMainGuestBtn) {
+        checkinMainGuestBtn.addEventListener("click", async () => {
+            console.log("Clique em confirmar principal");
+            if (!pendingGuestDoc || !pendingGuestData) {
+                console.log("Sem dados pendentes");
+                return;
+            }
+            await performCheckin("main");
+        });
+    }
+
+    if (checkinCompanionOnlyBtn) {
+        checkinCompanionOnlyBtn.addEventListener("click", async () => {
+            if (!pendingGuestDoc || !pendingGuestData) return;
+            await performCheckin("companion");
+        });
+    }
+
+    if (checkinBothBtn) {
+        checkinBothBtn.addEventListener("click", async () => {
+            if (!pendingGuestDoc || !pendingGuestData) return;
+            await performCheckin("both");
+        });
+    }
+
+    if (cancelCheckinBtn) {
+        cancelCheckinBtn.addEventListener("click", () => {
+            if (checkinDialog) checkinDialog.classList.add("hidden");
+            pendingGuestDoc = null;
+            pendingGuestData = null;
+            scheduleCooldownReset(2000);
         });
     }
 });
