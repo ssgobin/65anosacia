@@ -76,6 +76,7 @@ const DEFAULT_CONFIG = {
     eventTime: "19:00",
     eventLocation: "Villa Americana",
     eventMapsUrl: "https://www.google.com/maps/place/Villa+Americana+Eventos/@-22.7390903,-47.3291581,18z/data=!4m10!1m2!2m1!1sVilla+Americana+Americana+SP!3m6!1s0x94c89a4c64890eef:0xf745d6a03ce059ed!8m2!3d-22.739139!4d-47.3269233!15sChxWaWxsYSBBbWVyaWNhbmEgQW1lcmljYW5hIFNQWh4iHHZpbGxhIGFtZXJpY2FuYSBhbWVyaWNhbmEgc3CSAQtldmVudF92ZW51ZZoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOUU5XWlVSMWgzRUFF4AEA-gEECAAQHg!16s%2Fg%2F11b6f03vjh?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D",
+    headerImageUrl: "img/LOGO-ACIA_65_PRINCIPAL.png",
     blockDate: "2026-03-20",
     blockTime: "12:00",
     blockMessage: "O tempo de confirmação acabou :(\nA confirmação de presença foi encerrada.\n\nCaso tenha alguma dúvida, entre em contato com: 19 99246-2193",
@@ -115,12 +116,14 @@ async function updatePageConfig() {
         const h1 = header.querySelector("h1");
         const subtitle = header.querySelector(".subtitle");
         const mapLink = header.querySelector(".map-link");
+        const brandLogo = header.querySelector(".brand-logo");
 
         if (h1) h1.textContent = config.eventTitle;
         const [year, month, day] = config.eventDate.split("-");
         const formattedDate = new Date(+year, +month - 1, +day).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
         if (subtitle) subtitle.innerHTML = `${formattedDate}<br>às ${config.eventTime}<br>Local: ${config.eventLocation}`;
         if (mapLink) mapLink.href = config.eventMapsUrl;
+        if (brandLogo && config.headerImageUrl) brandLogo.src = config.headerImageUrl;
     }
 
     // Atualizar dialog de termos

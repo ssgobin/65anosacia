@@ -35,6 +35,7 @@ const eventDate = document.getElementById("eventDate");
 const eventTime = document.getElementById("eventTime");
 const eventLocation = document.getElementById("eventLocation");
 const eventMapsUrl = document.getElementById("eventMapsUrl");
+const headerImageUrl = document.getElementById("headerImageUrl");
 
 // Bloqueio
 const blockDate = document.getElementById("blockDate");
@@ -71,6 +72,7 @@ const DEFAULT_CONFIG = {
     eventTime: "19:00",
     eventLocation: "Villa Americana",
     eventMapsUrl: "https://www.google.com/maps/place/Villa+Americana+Eventos/@-22.7390903,-47.3291581,18z/data=!4m10!1m2!2m1!1sVilla+Americana+Americana+SP!3m6!1s0x94c89a4c64890eef:0xf745d6a03ce059ed!8m2!3d-22.739139!4d-47.3269233!15sChxWaWxsYSBBbWVyaWNhbmEgQW1lcmljYW5hIFNQWh4iHHZpbGxhIGFtZXJpY2FuYSBhbWVyaWNhbmEgc3CSAQtldmVudF92ZW51ZZoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOUU5XWlVSMWgzRUFF4AEA-gEECAAQHg!16s%2Fg%2F11b6f03vjh?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D",
+    headerImageUrl: "img/LOGO-ACIA_65_PRINCIPAL.png",
     blockDate: "2026-03-20",
     blockTime: "12:00",
     blockMessage: "O tempo de confirmação acabou :(\nA confirmação de presença foi encerrada.\n\nCaso tenha alguma dúvida, entre em contato com: 19 99246-2193",
@@ -138,6 +140,7 @@ async function loadCurrentConfig() {
         eventTime.value = config.eventTime || DEFAULT_CONFIG.eventTime;
         eventLocation.value = config.eventLocation || DEFAULT_CONFIG.eventLocation;
         eventMapsUrl.value = config.eventMapsUrl || DEFAULT_CONFIG.eventMapsUrl;
+        headerImageUrl.value = config.headerImageUrl || DEFAULT_CONFIG.headerImageUrl;
         blockDate.value = config.blockDate || DEFAULT_CONFIG.blockDate;
         blockTime.value = config.blockTime || DEFAULT_CONFIG.blockTime;
         blockMessage.value = config.blockMessage || DEFAULT_CONFIG.blockMessage;
@@ -183,6 +186,7 @@ async function saveEventConfig() {
             eventTime: eventTime.value,
             eventLocation: eventLocation.value,
             eventMapsUrl: eventMapsUrl.value || DEFAULT_CONFIG.eventMapsUrl,
+            headerImageUrl: headerImageUrl.value || DEFAULT_CONFIG.headerImageUrl,
             updatedAt: new Date().toISOString(),
         };
 
