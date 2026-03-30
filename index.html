@@ -70,6 +70,12 @@
                         maxlength="15" required>
                 </div>
 
+                <div id="emailGroup" class="field-group revealable hidden" aria-hidden="true">
+                    <label for="email">E-mail</label>
+                    <input id="email" name="email" type="email" placeholder="seu@email.com" autocomplete="email"
+                        required>
+                </div>
+
                 <div id="hasCompanionGroup" class="field-row revealable hidden" aria-hidden="true">
                     <div class="field-group">
                         <label for="hasCompanion">Levará acompanhante?</label>
@@ -170,6 +176,7 @@
         </article>
     </dialog>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script type="module" src="assets/js/app.js"></script>
 </body>
 

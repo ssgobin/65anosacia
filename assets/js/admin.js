@@ -7,12 +7,14 @@ import {
 import {
     collection,
     doc,
+    getDocs,
     getFirestore,
     onSnapshot,
     orderBy,
     query,
     serverTimestamp,
     updateDoc,
+    where,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -68,6 +70,18 @@ const exportOptionsDialog = document.getElementById("exportOptionsDialog");
 const exportAllButton = document.getElementById("exportAllButton");
 const exportAuthoritiesButton = document.getElementById("exportAuthoritiesButton");
 const exportOptionsCancelButton = document.getElementById("exportOptionsCancelButton");
+
+const startQrcodeButton = document.getElementById("startQrcodeButton");
+const stopQrcodeButton = document.getElementById("stopQrcodeButton");
+const qrcodeVideo = document.getElementById("qrcode-video");
+const qrcodeCanvas = document.getElementById("qrcode-canvas");
+const qrcodeStatus = document.getElementById("qrcodeStatus");
+const qrcodeResult = document.getElementById("qrcodeResult");
+const qrcodeManualInput = document.getElementById("qrcodeManualInput");
+const qrcodeManualButton = document.getElementById("qrcodeManualButton");
+
+let qrcodeStream = null;
+let qrcodeAnimationFrame = null;
 const editGuestDialog = document.getElementById("editGuestDialog");
 const editGuestDialogClose = document.getElementById("editGuestDialogClose");
 const editGuestDialogSubtitle = document.getElementById("editGuestDialogSubtitle");
@@ -82,6 +96,7 @@ const editCnpj = document.getElementById("editCnpj");
 const editCompanyField = document.getElementById("editCompanyField");
 const editCompanyName = document.getElementById("editCompanyName");
 const editPhone = document.getElementById("editPhone");
+const editEmail = document.getElementById("editEmail");
 const editHasCompanion = document.getElementById("editHasCompanion");
 const editCompanionSection = document.getElementById("editCompanionSection");
 const editCompanionFullName = document.getElementById("editCompanionFullName");
@@ -435,8 +450,14 @@ function openDetailsDialog(guest) {
         detailsItem(documentLabel, documentValue),
         detailsItem("Nome da empresa", companyValue),
         detailsItem("WhatsApp", formatPhone(guest.phone)),
+        detailsItem("E-mail", guest.email || "-"),
+        detailsItem("QR Code Token", guest.qrCodeToken ? guest.qrCodeToken.substring(0, 16) + "..." : "-"),
+        detailsItem("QR Code Status", guest.qrCodeUsed ? "Utilizado" : "Pendente"),
+        detailsItem("QR Code usado em", formatDateTime(guest.qrCodeUsedAt)),
         detailsItem("Acompanhante", companionSummary),
         detailsItem("Cargo do acompanhante", companionCargo),
+        detailsItem("Token Acompanhante", guest.companion?.qrCodeToken ? guest.companion.qrCodeToken.substring(0, 16) + "..." : "-"),
+        detailsItem("QR Acomp. Status", guest.companion?.qrCodeUsed ? "Utilizado" : "Pendente"),
         detailsItem("Termos aceitos em", formatDateTime(guest.acceptedTermsAt)),
         detailsItem("Confirmado em", formatDateTime(guest.createdAt)),
         detailsItem("Status de check-in", guest.checkedIn ? "Chegou no evento" : "Aguardando check-in"),
@@ -508,6 +529,7 @@ function openEditDialog(guest) {
     editCnpj.value = maskCnpj(guest.cnpj || "");
     editCompanyName.value = guest.companyName || "";
     editPhone.value = maskPhone(guest.phone || "");
+    editEmail.value = guest.email || "";
 
     const hasCompanion = !!(guest.hasCompanion && guest.companion);
     editHasCompanion.value = hasCompanion ? "sim" : "nao";
@@ -631,6 +653,7 @@ function getEditPayload(baseGuest) {
         companyName: personTypeValue === "PJ" ? editCompanyName.value.trim() : null,
         documentNumber: personTypeValue === "PF" ? onlyDigits(editCpf.value) : onlyDigits(editCnpj.value),
         phone: onlyDigits(editPhone.value),
+        email: editEmail.value.trim().toLowerCase(),
         hasCompanion,
         companion: hasCompanion
             ? {
@@ -802,6 +825,10 @@ function renderGuests(guests) {
               <span>${formatPhone(guest.phone)}</span>
             </div>
             <div class="meta-item">
+              <strong>E-mail</strong>
+              <span>${escapeHtml(guest.email || "-")}</span>
+            </div>
+            <div class="meta-item">
               <strong>Check-in em</strong>
               <span>${formatDateTime(guest.checkedInAt)}</span>
             </div>
@@ -856,6 +883,7 @@ function applyFilterAndRender() {
         const searchBase = [
             guest.fullName || "",
             guest.phone || "",
+            guest.email || "",
             docValue,
             guest.cargo || "",
             guest.companion?.fullName || "",
@@ -1211,6 +1239,210 @@ async function exportXlsx(mode = "all") {
     setTimeout(() => setFeedback(""), 3000);
 }
 
+async function processQrCode(token) {
+    if (!qrcodeStatus || !qrcodeResult) return;
+    
+    if (!token) {
+        qrcodeResult.innerHTML = '<p>Token não detectado</p>';
+        qrcodeResult.className = 'qrcode-result error';
+        return;
+    }
+
+    qrcodeStatus.textContent = 'Verificando token...';
+    qrcodeStatus.className = 'qrcode-status scanning';
+    qrcodeResult.innerHTML = '';
+
+    try {
+        const snapshot = await getDocs(query(
+            collection(db, 'confirmacoes_jantar'),
+            where('qrCodeToken', '==', token),
+            limit(1)
+        ));
+
+        if (snapshot.empty) {
+            qrcodeStatus.textContent = 'QR Code inválido';
+            qrcodeStatus.className = 'qrcode-status error';
+            qrcodeResult.innerHTML = `
+                <div class="qrcode-result error">
+                    <p style="font-size: 2em; margin: 0;">✗</p>
+                    <p class="guest-name">QR Code não encontrado</p>
+                </div>
+            `;
+            return;
+        }
+
+        const guestDoc = snapshot.docs[0];
+        const guestData = guestDoc.data();
+
+        if (guestData.qrCodeUsed) {
+            qrcodeStatus.textContent = 'QR Code já utilizado';
+            qrcodeStatus.className = 'qrcode-status error';
+            qrcodeResult.innerHTML = `
+                <div class="qrcode-result error">
+                    <p style="font-size: 2em; margin: 0;">✗</p>
+                    <p class="guest-name">QR Code já utilizado</p>
+                    <p>Utilizado em: ${formatDateTime(guestData.qrCodeUsedAt)}</p>
+                </div>
+            `;
+            return;
+        }
+
+        await updateDoc(doc(db, 'confirmacoes_jantar', guestDoc.id), {
+            qrCodeUsed: true,
+            qrCodeUsedAt: serverTimestamp(),
+            checkedIn: true,
+            checkedInAt: serverTimestamp(),
+            checkinMethod: 'qrcode'
+        });
+
+        qrcodeStatus.textContent = 'Check-in realizado!';
+        qrcodeStatus.className = 'qrcode-status success';
+        qrcodeResult.innerHTML = `
+            <div class="qrcode-result success">
+                <p style="font-size: 2em; margin: 0;">✓</p>
+                <p class="guest-name">${guestData.fullName}</p>
+                <p>Entrada registrada com sucesso!</p>
+            </div>
+        `;
+        setFeedback(`Check-in realizado: ${guestData.fullName}`);
+    } catch (error) {
+        console.error('Erro ao verificar QR Code:', error);
+        qrcodeStatus.textContent = 'Erro na verificação';
+        qrcodeStatus.className = 'qrcode-status error';
+        qrcodeResult.innerHTML = `
+            <div class="qrcode-result error">
+                <p>Erro ao verificar QR Code</p>
+                <p>Tente novamente</p>
+            </div>
+        `;
+    }
+
+    setTimeout(() => {
+        qrcodeStatus.textContent = 'Aguardando QRCode...';
+        qrcodeStatus.className = 'qrcode-status';
+    }, 5000);
+}
+
+function startQrCodeReader() {
+    if (!qrcodeStatus || !qrcodeVideo || !qrcodeCanvas) return;
+    
+    qrcodeStatus.textContent = 'Iniciando câmera...';
+    qrcodeStatus.className = 'qrcode-status';
+    
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: "environment",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+        } 
+    })
+    .then(stream => {
+        qrcodeStream = stream;
+        qrcodeVideo.srcObject = stream;
+        qrcodeVideo.setAttribute("playsinline", true);
+        qrcodeVideo.play();
+        
+        startQrcodeButton.classList.add('hidden');
+        stopQrcodeButton.classList.remove('hidden');
+        qrcodeStatus.textContent = 'Aguardando QRCode...';
+        qrcodeStatus.className = 'qrcode-status';
+        
+        requestAnimationFrame(scanQrCode);
+    })
+    .catch(err => {
+        console.error('Erro ao acessar câmera:', err);
+        qrcodeStatus.textContent = 'Erro ao acessar câmera';
+        qrcodeStatus.className = 'qrcode-status error';
+        qrcodeResult.innerHTML = `
+            <div class="qrcode-result error">
+                <p>Não foi possível acessar a câmera</p>
+                <p>Verifique as permissões do navegador</p>
+            </div>
+        `;
+    });
+}
+
+function stopQrCodeReader() {
+    if (!qrcodeVideo || !qrcodeStatus) return;
+    
+    if (qrcodeStream) {
+        qrcodeStream.getTracks().forEach(track => track.stop());
+        qrcodeStream = null;
+    }
+    
+    if (qrcodeAnimationFrame) {
+        cancelAnimationFrame(qrcodeAnimationFrame);
+        qrcodeAnimationFrame = null;
+    }
+    
+    startQrcodeButton.classList.remove('hidden');
+    stopQrcodeButton.classList.add('hidden');
+    qrcodeVideo.srcObject = null;
+    qrcodeStatus.textContent = 'Câmera parada';
+    qrcodeStatus.className = 'qrcode-status';
+}
+
+function scanQrCode() {
+    if (!qrcodeCanvas || !qrcodeVideo) return;
+    if (!qrcodeStream || qrcodeStream.active === false) {
+        return;
+    }
+
+    const canvas = qrcodeCanvas;
+    const video = qrcodeVideo;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert',
+        });
+
+        if (code) {
+            const token = code.data;
+            if (token && token.length > 0) {
+                processQrCode(token);
+                return;
+            }
+        }
+    }
+
+    qrcodeAnimationFrame = requestAnimationFrame(scanQrCode);
+}
+
+function setupQrCodeInteractions() {
+    if (!startQrcodeButton || !stopQrcodeButton || !qrcodeManualInput || !qrcodeManualButton) {
+        return;
+    }
+    
+    startQrcodeButton.addEventListener('click', startQrCodeReader);
+    stopQrcodeButton.addEventListener('click', stopQrCodeReader);
+    
+    qrcodeManualButton.addEventListener('click', () => {
+        const token = qrcodeManualInput.value.trim();
+        if (token) {
+            processQrCode(token);
+            qrcodeManualInput.value = '';
+        }
+    });
+    
+    qrcodeManualInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const token = qrcodeManualInput.value.trim();
+            if (token) {
+                processQrCode(token);
+                qrcodeManualInput.value = '';
+            }
+        }
+    });
+}
+
 
 function setupInteractions() {
     searchInput.addEventListener("input", applyFilterAndRender);
@@ -1423,5 +1655,8 @@ function setupLogout() {
 }
 
 setupInteractions();
+if (startQrcodeButton && stopQrcodeButton) {
+    setupQrCodeInteractions();
+}
 setupLogout();
 setupAdminAuthGuard();

@@ -40,6 +40,8 @@ const cnpjGroup = document.getElementById("cnpjGroup");
 const companyNameGroup = document.getElementById("companyNameGroup");
 const personTypeGroup = document.getElementById("personTypeGroup");
 const phoneGroup = document.getElementById("phoneGroup");
+const emailGroup = document.getElementById("emailGroup");
+const email = document.getElementById("email");
 const hasCompanionGroup = document.getElementById("hasCompanionGroup");
 const termsSection = document.getElementById("termsSection");
 const feedback = document.getElementById("formFeedback");
@@ -280,6 +282,134 @@ function isValidCompanyName(value) {
     return value.trim().length >= 2;
 }
 
+function isValidEmail(value) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value.trim());
+}
+
+function generateSecureToken() {
+    const array = new Uint8Array(24);
+    crypto.getRandomValues(array);
+    const hex = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex;
+}
+
+async function generateQrCodeForEmail(token) {
+    const qrCodeUrl = `https://convite65anos.web.app/verify?token=${token}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCodeUrl)}`;
+}
+
+async function loadQRCodeLib(attempts = 0) {
+    if (window.QRCode) return window.QRCode;
+    if (attempts >= 3) {
+        const fallbackSrc = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = fallbackSrc;
+            script.onload = () => {
+                const QRCodeLib = window.QRCode;
+                window.QRCode = {
+                    toCanvas: (canvas, text, opts) => {
+                        return new Promise((res) => {
+                            new QRCodeLib(canvas, { text, width: opts?.width || 250, margin: opts?.margin || 2 });
+                            setTimeout(res, 100);
+                        });
+                    }
+                };
+                resolve(window.QRCode);
+            };
+            script.onerror = () => reject(new Error('Falha ao carregar biblioteca QRCode'));
+            document.head.appendChild(script);
+        });
+    }
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+        script.onload = () => resolve(window.QRCode);
+        script.onerror = () => {
+            setTimeout(() => loadQRCodeLib(attempts + 1).then(resolve).catch(reject), 1000);
+        };
+        document.head.appendChild(script);
+    });
+}
+
+async function sendEmailWithQRCode(email, guestName, token, qrCodeDataUrl) {
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://convite65anos.web.app/img/LOGO-ACIA_65_PRINCIPAL.png" alt="ACIA 65 Anos" style="max-width: 200px;">
+        </div>
+        
+        <h1 style="color: #1e3a8a; text-align: center; margin-bottom: 10px;">Celebração dos 65 anos da ACIA</h1>
+        
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; text-align: center;">
+            Olá <strong>${guestName}</strong>,<br><br>
+            Sua confirmação de presença foi registrada com sucesso!
+        </p>
+        
+        <div style="background-color: #f0f9ff; border: 2px solid #1e3a8a; border-radius: 10px; padding: 30px; margin: 30px 0; text-align: center;">
+            <h2 style="color: #1e3a8a; margin-top: 0;">Seu QR Code de Acesso</h2>
+            <p style="color: #666666; font-size: 14px; margin-bottom: 20px;">
+                Apresente este QR Code na recepção do evento para validar sua entrada.
+            </p>
+            <img src="${qrCodeDataUrl}" alt="QR Code" style="max-width: 250px; width: 100%;">
+            <p style="color: #999999; font-size: 12px; margin-top: 15px;">
+                Token: ${token.substring(0, 8)}...
+            </p>
+        </div>
+        
+        <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1e3a8a; margin-top: 0;">Detalhes do Evento</h3>
+            <p style="color: #333333; margin: 10px 0;">
+                <strong>Data:</strong> 26/03/2026<br>
+                <strong>Horário:</strong> 19:00<br>
+                <strong>Local:</strong> Villa Americana
+            </p>
+        </div>
+        
+        <p style="color: #666666; font-size: 14px; text-align: center; margin-top: 30px;">
+            <strong>Importante:</strong> Este QR Code é de uso único. Ao apresentar na recepção, seu check-in será realizado automaticamente.
+        </p>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #999999; font-size: 12px;">
+                Em caso de dúvidas, entre em contato com a organização do evento.
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const emailData = {
+        service_id: 'service_5wcz9it',
+        template_id: 'template_jn73jw2',
+        user_id: 'kwKfo15VlYsFRuVhA',
+        template_params: {
+            to_email: email,
+            to_name: guestName,
+            qr_code_url: qrCodeDataUrl
+        }
+    };
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailData)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Erro desconhecido');
+        throw new Error(`EmailJS retornou erro ${response.status}: ${errorText}`);
+    }
+}
+
 function normalizeText(value) {
     return String(value || "")
         .normalize("NFD")
@@ -480,6 +610,13 @@ function validateForm() {
         });
     }
 
+    if (!isValidEmail(email.value)) {
+        invalidFields.push({
+            field: email,
+            message: "Informe um e-mail válido.",
+        });
+    }
+
     if (!personType.value) {
         invalidFields.push({ field: personType, message: "Selecione PF ou PJ." });
     }
@@ -602,6 +739,14 @@ function validateFieldRealtime(field) {
             clearFieldError(field);
         } else if (field.value.trim().length > 0) {
             setFieldError(field, "Informe o nome da empresa.");
+        } else {
+            clearFieldError(field);
+        }
+    } else if (field === email) {
+        if (isValidEmail(field.value)) {
+            clearFieldError(field);
+        } else if (field.value.trim().length > 0) {
+            setFieldError(field, "E-mail inválido.");
         } else {
             clearFieldError(field);
         }
@@ -784,9 +929,9 @@ function openSuccessDialog(guestName, hasCompanionSelected) {
     const highlightedName = `<span class="guest-highlight">${escapeHtml(firstName)}</span>`;
 
     if (hasCompanionSelected) {
-        successMessage.innerHTML = `${highlightedName}, sua presença e a dos seus convidados foi confirmada. Não haverá envio de e-mail nem QR Code. O acesso será realizado por lista de presença na recepção.`;
+        successMessage.innerHTML = `${highlightedName}, sua presença e a dos seus convidados foi confirmada. Um QR Code foi enviado para o seu e-mail. Apresente-o na recepção para acesso ao evento.`;
     } else {
-        successMessage.innerHTML = `${highlightedName}, sua presença foi confirmada. Não haverá envio de e-mail nem QR Code. O acesso será realizado por lista de presença na recepção.`;
+        successMessage.innerHTML = `${highlightedName}, sua presença foi confirmada. Um QR Code foi enviado para o seu e-mail. Apresente-o na recepção para acesso ao evento.`;
     }
 
     if (typeof successDialog.showModal === "function") {
@@ -818,6 +963,7 @@ function updateProgressiveFlow() {
         (personType.value === "PJ" && isValidCnpj(cnpj.value));
     const companyDone = personType.value !== "PJ" || isValidCompanyName(companyName.value);
     const phoneDone = isValidPhone(phone.value);
+    const emailDone = isValidEmail(email.value);
     const companionChoiceDone = hasCompanion.value === "sim" || hasCompanion.value === "nao";
     const companionDone =
         hasCompanion.value === "nao" ||
@@ -847,6 +993,12 @@ function updateProgressiveFlow() {
     }
 
     if (phoneDone) {
+        showElement(emailGroup);
+    } else {
+        hideElement(emailGroup);
+    }
+
+    if (emailDone) {
         showElement(hasCompanionGroup);
     } else {
         hideElement(hasCompanionGroup);
@@ -921,6 +1073,8 @@ async function handleSubmit(event) {
             return;
         }
 
+        const guestToken = generateSecureToken();
+        
         const payload = {
             fullName: fullName.value.trim(),
             personType: personType.value,
@@ -929,6 +1083,10 @@ async function handleSubmit(event) {
             companyName: personType.value === "PJ" ? companyName.value.trim() : null,
             documentNumber: primaryDocument,
             phone: onlyDigits(phone.value),
+            email: email.value.trim().toLowerCase(),
+            qrCodeToken: guestToken,
+            qrCodeUsed: false,
+            qrCodeUsedAt: null,
             hasCompanion: hasCompanion.value === "sim",
             companion:
                 hasCompanion.value === "sim"
@@ -936,6 +1094,9 @@ async function handleSubmit(event) {
                         fullName: companionFullName.value.trim(),
                         phone: onlyDigits(companionPhone.value),
                         cpf: onlyDigits(companionCpf.value),
+                        qrCodeToken: generateSecureToken(),
+                        qrCodeUsed: false,
+                        qrCodeUsedAt: null,
                     }
                     : null,
             acceptedTerms: true,
@@ -943,10 +1104,13 @@ async function handleSubmit(event) {
             createdAt: serverTimestamp(),
         };
 
-        await addDoc(collection(db, "confirmacoes_jantar"), payload);
+        const docRef = await addDoc(collection(db, "confirmacoes_jantar"), payload);
+
+        const savedFullName = fullName.value;
+        const savedHasCompanion = hasCompanion.value === "sim";
 
         setFeedback("Confirmação enviada com sucesso.", "success");
-        openSuccessDialog(fullName.value, hasCompanion.value === "sim");
+        openSuccessDialog(savedFullName, savedHasCompanion);
         form.reset();
         termsAccepted.value = "false";
         termsStatus.textContent = "Termos ainda não aceitos.";
@@ -954,6 +1118,15 @@ async function handleSubmit(event) {
         togglePersonDocumentFields();
         toggleCompanionFields();
         updateProgressiveFlow();
+
+        // Envia email em background (não bloqueia a tela de sucesso)
+        try {
+            const qrCodeDataUrl = await generateQrCodeForEmail(guestToken);
+            await sendEmailWithQRCode(payload.email, payload.fullName, guestToken, qrCodeDataUrl);
+            console.log('E-mail com QR Code enviado com sucesso para:', payload.email);
+        } catch (emailError) {
+            console.error('Erro ao enviar e-mail com QR Code:', emailError);
+        }
     } catch (error) {
         setFeedback("Não foi possível salvar no Firebase. Tente novamente.", "error");
         console.error(error);
@@ -995,6 +1168,11 @@ companyName.addEventListener("input", updateProgressiveFlow);
 phone.addEventListener("input", updateProgressiveFlow);
 phone.addEventListener("blur", () => {
     validateFieldRealtime(phone);
+});
+
+email.addEventListener("input", updateProgressiveFlow);
+email.addEventListener("blur", () => {
+    validateFieldRealtime(email);
 });
 
 hasCompanion.addEventListener("change", () => {

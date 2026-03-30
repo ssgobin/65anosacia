@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Leitor QR Code | ACIA 65 Anos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="../../assets/css/qr-reader.css">
+</head>
+
+<body>
+    <main class="qr-page">
+        <section class="qr-card">
+            <header class="qr-header">
+                <div class="brand">
+                    <img class="brand-logo" src="../../img/LOGO-ACIA_65_PRINCIPAL.png" alt="Logo oficial ACIA 65 anos">
+                </div>
+                <p class="kicker">Recepção do Evento</p>
+                <h1>Leitor de QR Code</h1>
+                <div class="qr-top-actions">
+                    <span id="adminEmailBadge" class="admin-email">Administrador</span>
+                    <a class="back-link" href="admin.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao painel</a>
+                    <button id="logoutButton" class="logout-button" type="button">Sair</button>
+                </div>
+            </header>
+
+            <section class="qr-reader-section">
+                <h2><i class="fa-solid fa-qrcode" aria-hidden="true"></i> Scan QR Code</h2>
+                <p>Apresente o QRCode do convidado para registrar o check-in automaticamente.</p>
+
+                <div class="qr-camera-container">
+                    <video id="qrVideo" playsinline></video>
+                    <canvas id="qrCanvas"></canvas>
+                    <div class="qr-camera-overlay">
+                        <div class="qr-scan-frame"></div>
+                    </div>
+                </div>
+
+                <div id="qrStatus" class="qr-status">Aguardando QR Code...</div>
+
+                <div id="qrResult" class="qr-result" aria-live="polite"></div>
+
+                <div class="qr-camera-actions">
+                    <button id="startCameraButton" class="primary-button" type="button">
+                        <i class="fa-solid fa-camera" aria-hidden="true"></i> Iniciar Câmera
+                    </button>
+                    <button id="stopCameraButton" class="secondary-button hidden" type="button">
+                        <i class="fa-solid fa-stop" aria-hidden="true"></i> Parar Câmera
+                    </button>
+                </div>
+
+                <div class="qr-manual-section">
+                    <span class="manual-label">Ou digite/cole o token manualmente:</span>
+                    <div class="qr-manual-row">
+                        <input id="manualTokenInput" type="text" placeholder="Token ou URL do QR Code...">
+                        <button id="verifyTokenButton" class="btn-verify" type="button">Verificar</button>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <dialog id="checkinDialog" class="checkin-modal">
+        <div class="checkin-modal-content">
+            <div class="checkin-modal-header">
+                <i class="fa-solid fa-user-check"></i>
+                <h3>Confirmar Check-in</h3>
+            </div>
+            <div class="checkin-modal-body">
+                <div class="guest-info-card">
+                    <div class="guest-info-row">
+                        <span class="guest-info-label">Nome:</span>
+                        <span id="modalGuestName" class="guest-info-value"></span>
+                    </div>
+                    <div class="guest-info-row">
+                        <span class="guest-info-label">Cargo:</span>
+                        <span id="modalGuestCargo" class="guest-info-value"></span>
+                    </div>
+                    <div id="companionInfoSection" class="companion-info-section hidden">
+                        <div class="companion-divider"></div>
+                        <div class="companion-header">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Acompanhante</span>
+                        </div>
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Nome:</span>
+                            <span id="modalCompanionName" class="guest-info-value"></span>
+                        </div>
+                        <div class="guest-info-row">
+                            <span class="guest-info-label">Cargo:</span>
+                            <span id="modalCompanionCargo" class="guest-info-value"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="checkin-modal-actions">
+                <button id="checkinMainGuestBtn" class="checkin-btn checkin-btn-primary">
+                    <i class="fa-solid fa-check"></i> Confirmar Principal
+                </button>
+                <button id="checkinCompanionOnlyBtn" class="checkin-btn checkin-btn-secondary hidden">
+                    <i class="fa-solid fa-user-plus"></i> Confirmar Acompanhante
+                </button>
+                <button id="checkinBothBtn" class="checkin-btn checkin-btn-success hidden">
+                    <i class="fa-solid fa-users"></i> Confirmar Ambos
+                </button>
+                <button id="cancelCheckinBtn" class="checkin-btn checkin-btn-cancel">Cancelar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script type="module" src="../../assets/js/qr-reader.js"></script>
+</body>
+
+</html>

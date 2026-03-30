@@ -210,4 +210,81 @@ Para mudar a data do evento:
 - Botao "Cadastrar novo" com os mesmos campos do formulario original e campo extra de cargo.
 - O painel principal de administracao mostra contagem por cargo e badge de cargo ao lado do nome.
 
+## 8) QR Code e Envio de E-mail
+
+### Como Funciona
+
+Quando um convidado confirma presença (sem acompanhante), o sistema:
+1. Gera um token aleatório seguro (24 bytes, hexadecimal)
+2. Salva o token no banco de dados junto com os dados do convidado
+3. Envia um e-mail com o QR Code para o endereço informado
+4. O QR Code contém um link para verificação: `https://seusite/verify?token=TOKEN`
+
+### Dados Armazenados
+
+No Firestore, cada confirmação agora inclui:
+
+```
+{
+  // ... outros campos
+  email: "email@exemplo.com",
+  qrCodeToken: "a1b2c3d4e5f6...",
+  qrCodeUsed: false,
+  qrCodeUsedAt: null,
+  companion: {
+    // ... dados do acompanhante
+    qrCodeToken: "...",
+    qrCodeUsed: false,
+    qrCodeUsedAt: null
+  }
+}
+```
+
+### Painel Admin - Leitor de QRCode
+
+O painel de administração (pages/admin/admin.html) agora inclui:
+- **Leitor de QRCode via câmera**: Abre a câmera do dispositivo para escanear QR Codes
+- **Entrada manual de token**: Possibilidade de digitar o token manualmente
+- **Verificação em tempo real**: Ao escanear, o sistema verifica automaticamente no banco de dados
+- **Check-in automático**: Se o QR Code for válido e não utilizado, registra o check-in automaticamente
+
+### Deploy das Cloud Functions
+
+Para que o envio de e-mail funcione, é necessário fazer o deploy das Cloud Functions:
+
+```bash
+# 1. Instale o Firebase CLI
+npm install -g firebase-tools
+
+# 2. Faça login
+firebase login
+
+# 3. Deploy das funções
+firebase deploy --only functions
+```
+
+### Configuração de SMTP
+
+As configurações de SMTP estão em `functions/index.js`:
+
+```js
+const SMTP_CONFIG = {
+    host: 'mail.acia.com.br',
+    port: 587,
+    secure: false,
+    auth: {
+        user: 'confirmacao@acia.com.br',
+        pass: 'c9bHtdLgFaB9XwM4zuUK'
+    }
+};
+```
+
+### Segurança do Token
+
+- Tokens são gerados usando `crypto.getRandomValues()` (24 bytes aleatórios)
+- Não são sequenciais ou previsíveis
+- Cada convidado (e acompanhante) tem seu próprio token
+- QR Code pode ser usado apenas uma vez
+- Após uso, registra o horário de entrada
+
 

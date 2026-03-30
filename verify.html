@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação | ACIA 65 Anos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        .verify-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .verify-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .verify-logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .verify-title {
+            color: #1e3a8a;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .verify-message {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .verify-success {
+            background: #dcfce7;
+            border: 2px solid #16a34a;
+            color: #166534;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .verify-error {
+            background: #fee2e2;
+            border: 2px solid #dc2626;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .verify-guest {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <main class="verify-page">
+        <div class="verify-card">
+            <img class="verify-logo" src="img/LOGO-ACIA_65_PRINCIPAL.png" alt="ACIA 65 Anos">
+            <h1 class="verify-title">Verificação de Acesso</h1>
+            <div id="verifyContent">
+                <p class="verify-message">Verificando QR Code...</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, query, where, limit, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_PzTMUhtk0dGh2X06dufw_NMAesMAZUE",
+            authDomain: "convite65anos.firebaseapp.com",
+            projectId: "convite65anos",
+            storageBucket: "convite65anos.firebasestorage.app",
+            messagingSenderId: "66072908061",
+            appId: "1:66072908061:web:094debb8cf0340268891f4",
+            measurementId: "G-86GT9VL0Y3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        const verifyContent = document.getElementById('verifyContent');
+
+        function formatDateTime(timestamp) {
+            if (!timestamp) return '-';
+            try {
+                if (timestamp.toDate) {
+                    return timestamp.toDate().toLocaleString('pt-BR');
+                }
+                return new Date(timestamp).toLocaleString('pt-BR');
+            } catch {
+                return '-';
+            }
+        }
+
+        async function verifyQrCode() {
+            if (!token) {
+                verifyContent.innerHTML = `
+                    <div class="verify-error">
+                        <p>QR Code inválido ou não encontrado.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const snapshot = await getDocs(query(
+                    collection(db, 'confirmacoes_jantar'),
+                    where('qrCodeToken', '==', token),
+                    limit(1)
+                ));
+
+                if (snapshot.empty) {
+                    verifyContent.innerHTML = `
+                        <div class="verify-error">
+                            <p style="font-size: 2em; margin: 0;">✗</p>
+                            <p class="verify-guest">QR Code não encontrado</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const guestDoc = snapshot.docs[0];
+                const guestData = guestDoc.data();
+
+                if (guestData.qrCodeUsed) {
+                    verifyContent.innerHTML = `
+                        <div class="verify-error">
+                            <p style="font-size: 2em; margin: 0;">✗</p>
+                            <p class="verify-guest">QR Code já utilizado</p>
+                            <p>Utilizado em: ${formatDateTime(guestData.qrCodeUsedAt)}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                await updateDoc(doc(db, 'confirmacoes_jantar', guestDoc.id), {
+                    qrCodeUsed: true,
+                    qrCodeUsedAt: serverTimestamp(),
+                    checkedIn: true,
+                    checkedInAt: serverTimestamp(),
+                    checkinMethod: 'qrcode'
+                });
+
+                verifyContent.innerHTML = `
+                    <div class="verify-success">
+                        <p style="font-size: 2em; margin: 0;">✓</p>
+                        <p class="verify-guest">${guestData.fullName}</p>
+                        <p>Check-in realizado com sucesso!</p>
+                    </div>
+                    <p class="verify-message">Bem-vindo ao evento!</p>
+                `;
+            } catch (error) {
+                console.error('Erro:', error);
+                verifyContent.innerHTML = `
+                    <div class="verify-error">
+                        <p>Erro ao verificar QR Code.</p>
+                        <p>Tente novamente ou contate a organização.</p>
+                    </div>
+                `;
+            }
+        }
+
+        verifyQrCode();
+    </script>
+</body>
+</html>
