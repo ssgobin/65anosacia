@@ -35,6 +35,7 @@ const companionSection = document.getElementById("companionSection");
 const companionFullName = document.getElementById("companionFullName");
 const companionPhone = document.getElementById("companionPhone");
 const companionCpf = document.getElementById("companionCpf");
+const companionEmail = document.getElementById("companionEmail");
 const cpfGroup = document.getElementById("cpfGroup");
 const cnpjGroup = document.getElementById("cnpjGroup");
 const companyNameGroup = document.getElementById("companyNameGroup");
@@ -333,68 +334,16 @@ async function loadQRCodeLib(attempts = 0) {
     });
 }
 
-async function sendEmailWithQRCode(email, guestName, token, qrCodeDataUrl) {
-    const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://convite65anos.web.app/img/LOGO-ACIA_65_PRINCIPAL.png" alt="ACIA 65 Anos" style="max-width: 200px;">
-        </div>
-        
-        <h1 style="color: #1e3a8a; text-align: center; margin-bottom: 10px;">Celebração dos 65 anos da ACIA</h1>
-        
-        <p style="color: #333333; font-size: 16px; line-height: 1.6; text-align: center;">
-            Olá <strong>${guestName}</strong>,<br><br>
-            Sua confirmação de presença foi registrada com sucesso!
-        </p>
-        
-        <div style="background-color: #f0f9ff; border: 2px solid #1e3a8a; border-radius: 10px; padding: 30px; margin: 30px 0; text-align: center;">
-            <h2 style="color: #1e3a8a; margin-top: 0;">Seu QR Code de Acesso</h2>
-            <p style="color: #666666; font-size: 14px; margin-bottom: 20px;">
-                Apresente este QR Code na recepção do evento para validar sua entrada.
-            </p>
-            <img src="${qrCodeDataUrl}" alt="QR Code" style="max-width: 250px; width: 100%;">
-            <p style="color: #999999; font-size: 12px; margin-top: 15px;">
-                Token: ${token.substring(0, 8)}...
-            </p>
-        </div>
-        
-        <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #1e3a8a; margin-top: 0;">Detalhes do Evento</h3>
-            <p style="color: #333333; margin: 10px 0;">
-                <strong>Data:</strong> 26/03/2026<br>
-                <strong>Horário:</strong> 19:00<br>
-                <strong>Local:</strong> Villa Americana
-            </p>
-        </div>
-        
-        <p style="color: #666666; font-size: 14px; text-align: center; margin-top: 30px;">
-            <strong>Importante:</strong> Este QR Code é de uso único. Ao apresentar na recepção, seu check-in será realizado automaticamente.
-        </p>
-        
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #999999; font-size: 12px;">
-                Em caso de dúvidas, entre em contato com a organização do evento.
-            </p>
-        </div>
-    </div>
-</body>
-</html>`;
-
+async function sendEmailWithQRCode(email, guestName, token, qrCodeDataUrl, templateId = 'template_jn73jw2', extraParams = {}) {
     const emailData = {
         service_id: 'service_5wcz9it',
-        template_id: 'template_jn73jw2',
+        template_id: templateId,
         user_id: 'kwKfo15VlYsFRuVhA',
         template_params: {
             to_email: email,
             to_name: guestName,
-            qr_code_url: qrCodeDataUrl
+            qr_code_url: qrCodeDataUrl,
+            ...extraParams
         }
     };
 
@@ -570,16 +519,19 @@ function toggleCompanionFields() {
         clearFieldError(companionFullName);
         clearFieldError(companionPhone);
         clearFieldError(companionCpf);
+        clearFieldError(companionEmail);
     }
 
     companionFullName.required = shouldShow;
     companionPhone.required = shouldShow;
     companionCpf.required = shouldShow;
+    companionEmail.required = shouldShow;
 
     if (!shouldShow) {
         companionFullName.value = "";
         companionPhone.value = "";
         companionCpf.value = "";
+        companionEmail.value = "";
     }
 }
 
@@ -668,6 +620,13 @@ function validateForm() {
             invalidFields.push({
                 field: companionCpf,
                 message: "CPF do acompanhante não pode ser igual ao CPF principal.",
+            });
+        }
+
+        if (!isValidEmail(companionEmail.value)) {
+            invalidFields.push({
+                field: companionEmail,
+                message: "E-mail do acompanhante inválido.",
             });
         }
     }
@@ -1094,9 +1053,7 @@ async function handleSubmit(event) {
                         fullName: companionFullName.value.trim(),
                         phone: onlyDigits(companionPhone.value),
                         cpf: onlyDigits(companionCpf.value),
-                        qrCodeToken: generateSecureToken(),
-                        qrCodeUsed: false,
-                        qrCodeUsedAt: null,
+                        email: companionEmail.value.trim().toLowerCase(),
                     }
                     : null,
             acceptedTerms: true,
@@ -1122,8 +1079,23 @@ async function handleSubmit(event) {
         // Envia email em background (não bloqueia a tela de sucesso)
         try {
             const qrCodeDataUrl = await generateQrCodeForEmail(guestToken);
+            
+            // Envia email para o titular
             await sendEmailWithQRCode(payload.email, payload.fullName, guestToken, qrCodeDataUrl);
             console.log('E-mail com QR Code enviado com sucesso para:', payload.email);
+
+            // Envia email para o acompanhante - MESMO QR Code, mas template diferente
+            if (payload.hasCompanion && payload.companion && payload.companion.email) {
+                await sendEmailWithQRCode(
+                    payload.companion.email, 
+                    payload.companion.fullName, 
+                    guestToken, 
+                    qrCodeDataUrl,
+                    'template_vb8gv09',  // Template específico para acompanhante
+                    { nome_titular: payload.fullName }  // Variável extra para o template
+                );
+                console.log('E-mail com QR Code enviado com sucesso para o acompanhante:', payload.companion.email);
+            }
         } catch (emailError) {
             console.error('Erro ao enviar e-mail com QR Code:', emailError);
         }
