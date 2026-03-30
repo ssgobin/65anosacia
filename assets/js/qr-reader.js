@@ -277,7 +277,7 @@ async function processQrCode(rawValue) {
             showResult(
                 `<span class="result-icon">✓</span>
                  <span class="result-name">${escapeHtml(guestData.companion.fullName || "Acompanhante")}</span>
-                 <span class="result-detail">Entrada do acompanhante registrada!</span>`,
+                 <span class="result-detail">Acompanhante confirmado!</span>`,
                 "success"
             );
             
@@ -289,7 +289,7 @@ async function processQrCode(rawValue) {
             return;
         }
 
-        // Se é token do titular (lógica original)
+        // Se é token do titular - faz check-in automaticamente
         if (guestData.qrCodeUsed) {
             setStatus("QR Code já utilizado", "error");
             showResult(
@@ -302,7 +302,7 @@ async function processQrCode(rawValue) {
             return;
         }
         
-        if (!hasCompanion && mainCheckedIn) {
+        if (mainCheckedIn) {
             setStatus("Check-in já realizado!", "success");
             showResult(
                 `<span class="result-icon">✓</span>
@@ -314,12 +314,28 @@ async function processQrCode(rawValue) {
             return;
         }
 
-        pendingGuestDoc = guestDoc;
-        pendingGuestData = guestData;
-        
-        showCheckinModal(guestData);
-        setStatus("Aguardando confirmação...", "scanning");
-        clearResult();
+        // Faz check-in do titular automaticamente
+        await updateDoc(doc(db, "confirmacoes_jantar", guestDoc.id), {
+            checkedIn: true,
+            checkedInAt: serverTimestamp(),
+            qrCodeUsed: true,
+            qrCodeUsedAt: serverTimestamp(),
+            checkinMethod: "qrcode"
+        });
+
+        setStatus("Check-in realizado!", "success");
+        showResult(
+            `<span class="result-icon">✓</span>
+             <span class="result-name">${escapeHtml(guestData.fullName)}</span>
+             <span class="result-detail">Convidado confirmado!</span>`,
+            "success"
+        );
+
+        if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+        }
+
+        scheduleCooldownReset(4000);
     } catch (error) {
         console.error("Erro ao verificar QR Code:", error);
         setStatus("Erro na verificação", "error");
