@@ -1,13 +1,14 @@
 :root {
-    --bg-start: #f8fbff;
-    --bg-end: #dce9ff;
-    --card-bg: #ffffff;
-    --accent: #1d4ed8;
-    --accent-strong: #1e40af;
+    --bg-start: #f0f4ff;
+    --bg-end: #e2e8f0;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --accent: #2563eb;
+    --accent-strong: #1d4ed8;
     --ink: #0f172a;
-    --muted: #334155;
-    --line: #cbd5e1;
-    --danger: #b91c1c;
+    --muted: #475569;
+    --line: #e2e8f0;
+    --danger: #dc2626;
+    --glass-border: rgba(255, 255, 255, 0.5);
 }
 
 * {
@@ -20,9 +21,11 @@ body {
     font-family: "Montserrat", sans-serif;
     color: var(--ink);
     background:
-        radial-gradient(circle at 14% 15%, rgba(255, 255, 255, 0.92), transparent 36%),
-        radial-gradient(circle at 85% 8%, rgba(37, 99, 235, 0.16), transparent 30%),
-        linear-gradient(145deg, var(--bg-start), var(--bg-end));
+        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.06), transparent 35%),
+        radial-gradient(circle at 90% 5%, rgba(147, 197, 253, 0.15), transparent 25%),
+        linear-gradient(135deg, var(--bg-start) 0%, #dbeafe 50%, var(--bg-end) 100%);
+    background-attachment: fixed;
 }
 
 .login-page {
@@ -33,62 +36,73 @@ body {
 }
 
 .login-card {
-    width: min(100%, 520px);
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    border-radius: 20px;
-    background: var(--card-bg);
-    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.13);
-    padding: 24px;
+    width: min(100%, 540px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 
+        0 4px 24px rgba(15, 23, 42, 0.08),
+        0 12px 48px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 28px 32px;
 }
 
 .brand {
     display: flex;
     justify-content: center;
-    margin: 0 0 12px;
+    margin: 0 0 16px;
 }
 
 .brand-logo {
-    width: min(100%, 230px);
+    width: min(100%, 240px);
     height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 8px 16px rgba(30, 64, 175, 0.18));
+    filter: drop-shadow(0 12px 24px rgba(30, 58, 138, 0.2));
 }
 
 .kicker {
     margin: 0;
     color: var(--accent);
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 h1 {
-    margin: 8px 0 0;
+    margin: 10px 0 0;
     font-family: "Montserrat", sans-serif;
-    font-weight: 900;
-    font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .subtitle {
-    margin: 10px 0 0;
+    margin: 12px 0 0;
     color: var(--muted);
-    font-weight: 300;
+    font-weight: 400;
 }
 
 form {
-    margin-top: 18px;
+    margin-top: 22px;
     display: grid;
-    gap: 14px;
+    gap: 16px;
 }
 
 .field-group {
     display: grid;
-    gap: 6px;
+    gap: 8px;
 }
 
 label {
     font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
 }
 
 input,
@@ -98,16 +112,19 @@ button {
 
 input {
     width: 100%;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 12px 14px;
-    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.8);
+    transition: all 200ms ease;
+    font-size: 1rem;
 }
 
 input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.16);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 2px 8px rgba(37, 99, 235, 0.08);
+    background: #ffffff;
 }
 
 .login-feedback {
@@ -119,36 +136,46 @@ input:focus {
 
 .primary-button {
     border: none;
-    border-radius: 12px;
-    padding: 12px 14px;
-    background: var(--accent);
-    color: #f8fafc;
-    font-weight: 700;
+    border-radius: 14px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
     cursor: pointer;
-    transition: filter 120ms ease, transform 120ms ease;
+    transition: all 200ms ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .primary-button:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
 }
 
 .primary-button:active {
     transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
 }
 
 .back-link {
-    margin-top: 14px;
+    margin-top: 16px;
     display: inline-flex;
     text-decoration: none;
     color: var(--accent-strong);
     font-weight: 600;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: var(--accent);
 }
 
 .hint {
-    margin: 12px 0 0;
+    margin: 14px 0 0;
     color: var(--muted);
-    font-size: 0.88rem;
-    font-weight: 300;
+    font-size: 0.86rem;
+    font-weight: 400;
 }
 
 @media (max-width: 560px) {

@@ -1,13 +1,13 @@
 :root {
-    --card-bg: #ffffff;
-    --accent: #1d4ed8;
-    --accent-strong: #1e40af;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --accent: #2563eb;
+    --accent-strong: #1d4ed8;
     --ink: #0f172a;
-    --muted: #64748b;
-    --success: #22c55e;
-    --error: #ef4444;
-    --border: rgba(15, 23, 42, 0.1);
-    --shadow: 0 22px 56px rgba(15, 23, 42, 0.12);
+    --muted: #475569;
+    --success: #16a34a;
+    --error: #dc2626;
+    --border: rgba(226, 232, 240, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.5);
 }
 
 * {
@@ -19,7 +19,12 @@ body {
     min-height: 100vh;
     font-family: "Montserrat", sans-serif;
     color: var(--ink);
-    background: #f8fafc;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.06), transparent 35%),
+        radial-gradient(circle at 90% 5%, rgba(147, 197, 253, 0.15), transparent 25%),
+        linear-gradient(135deg, #f0f4ff 0%, #dbeafe 50%, #e2e8f0 100%);
+    background-attachment: fixed;
 }
 
 .qr-page {
@@ -27,73 +32,82 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 24px;
 }
 
 .qr-card {
     width: min(100%, 600px);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    background: var(--card-bg);
-    box-shadow: var(--shadow);
-    padding: 24px;
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 
+        0 4px 24px rgba(15, 23, 42, 0.08),
+        0 12px 48px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 28px;
     overflow: hidden;
 }
 
 .qr-header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .brand {
     display: flex;
     justify-content: center;
-    margin: 0 0 12px;
+    margin: 0 0 16px;
 }
 
 .qr-header .brand-logo {
-    width: min(100%, 200px);
+    width: min(100%, 220px);
     height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 8px 16px rgba(30, 64, 175, 0.18));
+    filter: drop-shadow(0 12px 24px rgba(30, 58, 138, 0.2));
 }
 
 .qr-header .kicker {
-    margin: 0 0 6px;
+    margin: 0 0 10px;
     color: var(--accent);
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 1.1px;
+    letter-spacing: 2px;
 }
 
 .qr-header h1 {
     margin: 0;
     font-family: "Montserrat", sans-serif;
-    font-weight: 900;
-    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
-    color: var(--ink);
+    font-weight: 800;
+    font-size: clamp(1.3rem, 3vw, 1.9rem);
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .qr-top-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     justify-content: center;
     align-items: center;
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 18px;
+    padding-top: 18px;
     border-top: 1px solid var(--border);
 }
 
 .admin-email {
     display: inline-flex;
     border-radius: 999px;
-    padding: 6px 11px;
-    background: #dbeafe;
+    padding: 8px 14px;
+    background: rgba(219, 234, 254, 0.8);
     color: #1e3a8a;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
+    backdrop-filter: blur(4px);
 }
 
 .back-link {
@@ -114,18 +128,18 @@ body {
 .logout-button {
     border: none;
     border-radius: 999px;
-    padding: 6px 12px;
+    padding: 8px 14px;
     font: inherit;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
-    background: #fee2e2;
+    background: rgba(254, 226, 226, 0.8);
     color: #991b1b;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .logout-button:hover {
-    background: #fecaca;
+    background: #fee2e2;
 }
 
 .qr-reader-section {
@@ -305,21 +319,22 @@ body {
     justify-content: center;
     gap: 8px;
     border: none;
-    border-radius: 12px;
-    padding: 12px 24px;
+    border-radius: 14px;
+    padding: 14px 24px;
     font: inherit;
     font-size: 0.95rem;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
-    transition: transform 120ms ease, filter 120ms ease, box-shadow 0.2s;
-    background: var(--accent);
+    transition: all 200ms ease;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
 }
 
 .primary-button:hover {
-    filter: brightness(1.05);
-    box-shadow: 0 6px 16px rgba(29, 78, 216, 0.4);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+    transform: translateY(-1px);
 }
 
 .primary-button:active {
@@ -331,20 +346,21 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 24px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 14px;
+    padding: 14px 24px;
     font: inherit;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.8);
     color: var(--ink);
 }
 
 .secondary-button:hover {
     background: #f1f5f9;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 .qr-manual-section {
@@ -438,7 +454,8 @@ body {
     bottom: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -451,12 +468,15 @@ body {
 }
 
 .checkin-modal-content {
-    background: #ffffff;
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-radius: 28px;
     width: 100%;
     max-width: 420px;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset;
     animation: modalSlideIn 0.3s ease;
 }
 
@@ -472,32 +492,32 @@ body {
 }
 
 .checkin-modal-header {
-    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: #ffffff;
-    padding: 20px;
+    padding: 24px;
     text-align: center;
 }
 
 .checkin-modal-header i {
-    font-size: 2rem;
-    margin-bottom: 8px;
+    font-size: 2.2rem;
+    margin-bottom: 10px;
     display: block;
 }
 
 .checkin-modal-header h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.3rem;
     font-weight: 700;
 }
 
 .checkin-modal-body {
-    padding: 20px;
+    padding: 24px;
 }
 
 .guest-info-card {
-    background: #f8fafc;
-    border-radius: 12px;
-    padding: 16px;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 14px;
+    padding: 18px;
     border: 1px solid var(--border);
 }
 
@@ -505,7 +525,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 10px 0;
 }
 
 .guest-info-row:not(:last-child) {
@@ -526,13 +546,13 @@ body {
 }
 
 .companion-info-section {
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .companion-divider {
     height: 1px;
     background: var(--border);
-    margin: 12px 0;
+    margin: 14px 0;
 }
 
 .companion-header {
@@ -542,7 +562,7 @@ body {
     color: var(--accent);
     font-weight: 700;
     font-size: 0.9rem;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .companion-header i {
@@ -550,10 +570,10 @@ body {
 }
 
 .checkin-modal-actions {
-    padding: 16px 20px 20px;
+    padding: 18px 24px 24px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .checkin-btn {
@@ -561,46 +581,50 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 14px 20px;
+    padding: 16px 20px;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     font-family: inherit;
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .checkin-btn-primary {
-    background: var(--accent);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: #ffffff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
 }
 
 .checkin-btn-primary:hover {
-    background: var(--accent-strong);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
 }
 
 .checkin-btn-secondary {
-    background: #f0f9ff;
+    background: rgba(219, 234, 254, 0.8);
     color: var(--accent);
     border: 2px solid var(--accent);
 }
 
 .checkin-btn-secondary:hover {
-    background: #e0f2fe;
+    background: #dbeafe;
 }
 
 .checkin-btn-success {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
     color: #ffffff;
+    box-shadow: 0 4px 14px rgba(22, 101, 52, 0.25);
 }
 
 .checkin-btn-success:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 20px rgba(22, 101, 52, 0.35);
 }
 
 .checkin-btn-cancel {
-    background: #f1f5f9;
+    background: rgba(241, 245, 249, 0.8);
     color: var(--muted);
 }
 
